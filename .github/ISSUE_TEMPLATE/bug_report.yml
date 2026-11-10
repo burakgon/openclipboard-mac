@@ -1,0 +1,27 @@
+name: Bug report
+description: Something does not work the way it should
+labels: [bug]
+body:
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead. A screenshot or recording helps a lot.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: OpenClipboard version
+      description: Settings → About
+      placeholder: "1.0.0 (1)"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: macOS version and Mac
+      placeholder: "macOS 27.2, MacBook Pro (M5 Max)"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Which app were you copying from or pasting into?
+      description: If the problem is about a particular app

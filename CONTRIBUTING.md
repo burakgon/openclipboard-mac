@@ -1,0 +1,52 @@
+# Contributing
+
+Thank you for wanting to make OpenClipboard better.
+
+## Reporting a problem
+
+Open an [issue](https://github.com/burakgon/openclipboard-mac/issues/new/choose) and say what you
+did, what you expected and what happened. The version of OpenClipboard (Settings → About) and of
+macOS, and the app you were copying from or pasting into, usually decide how quickly it can be
+found. A screenshot or a short recording is worth a paragraph.
+
+Please do not paste the content of your clipboard history into an issue if it is private.
+
+## Building
+
+You need Xcode 27 or later. Open `OpenClipboard.xcodeproj` and run, or:
+
+```sh
+xcodebuild -project OpenClipboard.xcodeproj -scheme OpenClipboard -derivedDataPath build/DerivedData build
+swift test --package-path Packages/OpenClipboardKit
+```
+
+The app is signed ad hoc unless you create `Config/Local.xcconfig` with your own signing identity;
+`Config/Base.xcconfig` explains how. With your own identity, macOS remembers the Accessibility
+permission across rebuilds.
+
+Start the app with `--demo` to work on the interface with sample clips, away from your real
+history and pasteboard. `OpenClipboard/Support/Demo.swift` lists the arguments that stage a scene.
+
+## Where things are
+
+- `Packages/OpenClipboardKit` is everything that is not user interface: watching and reading the
+  pasteboard, deciding what a clip is, the SQLite history, writing a clip back. It has the tests.
+- `OpenClipboard` is the app: the shelf, the settings, the welcome window, the global shortcut.
+
+Logic that can be tested belongs in the kit, with a test.
+
+## Changes
+
+- Keep a change about one thing, and say in the commit message what it does and why.
+- Match the code around you: plain Swift, no new dependencies without a very good reason, and
+  comments that explain why something is the way it is rather than what the next line does.
+- The app has to stay light. If a change makes it use the processor while idle, or keep
+  noticeably more memory, that needs a reason.
+- Run `swift test --package-path Packages/OpenClipboardKit` before you open a pull request.
+- Interface changes are easiest to review with a before and after screenshot.
+
+## Releasing
+
+For maintainers: set the version in `Config/Version.xcconfig`, add a section for it to
+`CHANGELOG.md`, commit, push, and run `scripts/release.sh --publish` (or push a `v1.2.3` tag and
+let the Release workflow do it). The script's header describes the credentials it uses.
