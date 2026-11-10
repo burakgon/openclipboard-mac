@@ -33,8 +33,8 @@ GCC_NO_COMMON_BLOCKS = YES
 ALWAYS_SEARCH_USER_PATHS = NO
 
 // The public half of the key that signs updates. Sparkle refuses an update that was not
-// signed with the matching private key.
-SPARKLE_PUBLIC_ED_KEY =
+// signed with the matching private key, which is not in this repository.
+SPARKLE_PUBLIC_ED_KEY = bD1vjOrgqPG5vaE8e/jPNUIFGyvRHg+Qrg68sjrS0aE=
 
 // Anyone can build and run the app without an Apple developer account: by default it is
 // signed ad hoc. To sign with your own identity, which keeps the Accessibility permission
