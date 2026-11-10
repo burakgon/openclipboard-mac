@@ -192,7 +192,8 @@ In `~/Library/Application Support/OpenClipboard/History.sqlite`. Copy the folder
 not running.
 
 **Does it sync between Macs, or with my iPhone?**<br>
-No. What you copy on your iPhone with Universal Clipboard is recorded when you paste it on the Mac.
+No, it has no sync of its own. What Apple's Universal Clipboard brings over from your iPhone or iPad
+is recorded like any other copy.
 
 **Why macOS 26 or later?**<br>
 The shelf is built on Liquid Glass, which arrived with macOS 26. Supporting older systems would
