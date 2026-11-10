@@ -151,6 +151,18 @@ final class ShelfModel {
         }
     }
 
+    /// Forgets the loaded clips. Called some time after the shelf closed: the next opening
+    /// reloads them, and until then the cards and their pictures do not occupy memory.
+    func unload() {
+        generation += 1
+        items = []
+        totalCount = 0
+        hasLoaded = false
+        selection = nil
+        visibleIDs = []
+        selectedCardFrame = .zero
+    }
+
     /// Loads the next page once the user gets near the end of what is loaded.
     func cardAppeared(_ item: ClipItem) {
         guard items.count < totalCount, let index = items.firstIndex(where: { $0.id == item.id }),

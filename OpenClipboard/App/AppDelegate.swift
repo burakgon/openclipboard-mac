@@ -5,7 +5,7 @@ import OpenClipboardKit
 /// Creates the parts of the app and connects them.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settings = Demo.isEnabled ? AppSettings(defaults: Demo.settingsDefaults) : AppSettings()
-    private let updater = Updater()
+    private let updater = Updater(isEnabled: !Demo.isEnabled)
     private var store: HistoryStore?
     private var clipboard: SystemClipboard?
     private var shelf: ShelfController?
@@ -59,6 +59,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let director = DemoDirector(shelf: shelf)
             demoDirector = director
             shelf.takesFocus = !Demo.has("--passive")
+            shelf.assumesPastePermission = Demo.has("--trusted")
             AppWindows.isPassive = Demo.has("--passive")
             Task {
                 await Demo.populate(store)

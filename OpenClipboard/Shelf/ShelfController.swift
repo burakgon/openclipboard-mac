@@ -35,6 +35,10 @@ final class ShelfController: NSObject, NSWindowDelegate {
     /// keyboard from whoever is at the Mac.
     @ObservationIgnored var takesFocus = true
 
+    /// True only while screenshots are staged, to show the shelf the way it looks once the
+    /// permission to paste has been given.
+    @ObservationIgnored var assumesPastePermission = false
+
     /// Opens the settings window. Set by the app delegate.
     @ObservationIgnored var onOpenSettings: (() -> Void)?
 
@@ -58,7 +62,7 @@ final class ShelfController: NSObject, NSWindowDelegate {
         guard !isVisible else { return }
         isVisible = true
         cacheCleanup?.cancel()
-        canPasteDirectly = settings.pastesDirectly && PasteService.isTrusted
+        canPasteDirectly = settings.pastesDirectly && (PasteService.isTrusted || assumesPastePermission)
 
         let panel = panel ?? makePanel()
         panel.setFrame(shelfFrame(on: activeScreen()), display: false)
@@ -93,10 +97,13 @@ final class ShelfController: NSObject, NSWindowDelegate {
             panel?.orderOut(nil)
         }
 
-        // Decoded pictures are only worth their memory while the shelf is likely to come back.
+        // The cards and their decoded pictures are only worth their memory while the shelf
+        // is likely to come right back. After a while they are let go; the window itself
+        // stays, so the next opening is still instant.
         cacheCleanup = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(45))
+            try? await Task.sleep(for: .seconds(30))
             guard let self, !Task.isCancelled, !self.isVisible else { return }
+            self.model.unload()
             self.thumbnails.removeAll()
             self.fileThumbnails.removeAll()
         }

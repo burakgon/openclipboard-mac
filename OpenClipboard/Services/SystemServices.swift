@@ -33,13 +33,14 @@ final class Updater: NSObject, SPUStandardUserDriverDelegate {
     /// The menu bar item then offers it, instead of a window appearing out of nowhere.
     private(set) var availableVersion: String?
 
-    /// False in builds that have no update key, such as local development builds.
+    /// False in builds that have no update key, and in the demo.
     var isAvailable: Bool { controller != nil }
 
-    override init() {
+    /// - Parameter isEnabled: False in the demo, which must never go online or offer updates.
+    init(isEnabled: Bool = true) {
         super.init()
         let key = Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String ?? ""
-        guard !key.isEmpty else { return }
+        guard isEnabled, !key.isEmpty else { return }
         controller = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: self)
     }
 

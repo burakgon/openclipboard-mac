@@ -32,7 +32,7 @@ enum PreviewLayout {
         case .link:
             size = CGSize(width: 540, height: 200)
         case .color:
-            size = CGSize(width: 360, height: 300)
+            size = CGSize(width: 420, height: 310)
         case .file:
             let count = item.meta.fileCount ?? 1
             size = count > 1
@@ -90,12 +90,14 @@ private struct PreviewView: View {
             }
             Text(item.appName ?? item.kind.title)
                 .font(.system(size: 13, weight: .semibold))
+                .lineLimit(1)
             Text(item.kind.title)
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 7)
                 .frame(height: 19)
                 .background(.primary.opacity(0.08), in: .capsule)
+                .fixedSize()
             if item.isPinned {
                 Image(systemName: "pin.fill")
                     .font(.system(size: 10, weight: .bold))
@@ -105,6 +107,8 @@ private struct PreviewView: View {
             Text(Formatting.timestamp(item.usedAt))
                 .font(.system(size: 11.5))
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .fixedSize()
         }
         .padding(.horizontal, 16)
         .frame(height: PreviewLayout.headerHeight)
@@ -228,7 +232,11 @@ private struct TextViewer: NSViewRepresentable {
         scrollView.appearance = isPaper ? NSAppearance(named: .aqua) : nil
         if textView.textStorage?.isEqual(to: text) != true {
             textView.textStorage?.setAttributedString(text)
-            textView.scroll(.zero)
+            // Replacing the text leaves the insertion point at its end, and a text view
+            // scrolls to its insertion point. Put it back at the start, and the view too.
+            textView.setSelectedRange(NSRange(location: 0, length: 0))
+            scrollView.contentView.scroll(to: .zero)
+            scrollView.reflectScrolledClipView(scrollView.contentView)
         }
     }
 }

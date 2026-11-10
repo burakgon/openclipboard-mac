@@ -17,10 +17,16 @@ enum Formatting {
         }
     }
 
-    /// A full date for the preview: "Today at 14:32", "Yesterday at 09:10", "12 Mar 2026 at 18:00".
-    static func timestamp(_ date: Date) -> String {
-        date.formatted(.relative(presentation: .named, unitsStyle: .wide)).capitalizedFirst
-            + " · " + date.formatted(date: .abbreviated, time: .shortened)
+    /// The moment a clip was copied, for the preview: "Today at 14:32", "Yesterday at 09:10",
+    /// "Mar 12 at 18:00", and with the year when it was not this one.
+    static func timestamp(_ date: Date, now: Date = Date()) -> String {
+        let calendar = Calendar.current
+        let time = date.formatted(date: .omitted, time: .shortened)
+        if calendar.isDateInToday(date) { return "Today at \(time)" }
+        if calendar.isDateInYesterday(date) { return "Yesterday at \(time)" }
+        let sameYear = calendar.isDate(date, equalTo: now, toGranularity: .year)
+        let day = date.formatted(sameYear ? .dateTime.month(.abbreviated).day() : .dateTime.month(.abbreviated).day().year())
+        return "\(day) at \(time)"
     }
 
     static func bytes(_ count: Int) -> String {
@@ -85,12 +91,5 @@ extension ClipKind {
         case .file: "doc"
         case .color: "paintpalette"
         }
-    }
-}
-
-extension String {
-    var capitalizedFirst: String {
-        guard let first else { return self }
-        return first.uppercased() + dropFirst()
     }
 }

@@ -19,6 +19,7 @@ import SwiftUI
 ///     --onboarding           show the welcome window
 ///     --settings history     show a pane of the settings window
 ///     --passive              never take the keyboard focus (for unattended screenshots)
+///     --trusted              show the shelf as it is with the permission to paste
 enum Demo {
     static let isEnabled = CommandLine.arguments.contains("--demo")
 
