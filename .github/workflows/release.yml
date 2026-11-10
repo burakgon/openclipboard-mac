@@ -45,17 +45,27 @@ jobs:
 
       - name: Check the tag
         if: env.PUBLISH != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           version=$(sed -n 's/^MARKETING_VERSION = //p' Config/Version.xcconfig)
           if [[ "$GITHUB_REF_NAME" != "v$version" ]]; then
             echo "::error::Tag $GITHUB_REF_NAME does not match the version in Config/Version.xcconfig ($version)"
             exit 1
           fi
+          # scripts/release.sh --publish, run on a Mac, creates the tag together with the
+          # release. Then there is nothing left to do here.
+          if gh release view "$GITHUB_REF_NAME" -R "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "::notice::$GITHUB_REF_NAME is already published"
+            echo "ALREADY_PUBLISHED=1" >> "$GITHUB_ENV"
+          fi
 
       - name: Test
+        if: env.ALREADY_PUBLISHED != '1'
         run: swift test --package-path Packages/OpenClipboardKit
 
       - name: Signing credentials
+        if: env.ALREADY_PUBLISHED != '1'
         env:
           KEY: ${{ secrets.ASC_KEY_BASE64 }}
           P12: ${{ secrets.DEVELOPER_ID_P12_BASE64 }}
@@ -83,6 +93,7 @@ jobs:
           fi
 
       - name: Build, notarize and publish
+        if: env.ALREADY_PUBLISHED != '1'
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
@@ -94,6 +105,7 @@ jobs:
         run: scripts/release.sh $PUBLISH
 
       - uses: actions/upload-artifact@v7
+        if: env.ALREADY_PUBLISHED != '1'
         with:
           name: OpenClipboard
           path: |
