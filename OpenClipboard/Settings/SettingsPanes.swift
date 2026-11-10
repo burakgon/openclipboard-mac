@@ -9,6 +9,7 @@ struct GeneralSettingsPane: View {
     @Bindable var settings: AppSettings
     @State private var opensAtLogin = LoginItem.isEnabled
     @State private var loginItemFailed = false
+    @State private var shortcutIsActive = true
 
     var body: some View {
         SettingsPane {
@@ -17,7 +18,17 @@ struct GeneralSettingsPane: View {
                     ShortcutRecorder(combo: $settings.hotKey)
                 }
             } footer: {
-                Text("Works in every app. Press it again, or Esc, to close the history.")
+                if shortcutIsActive {
+                    Text("Works in every app. Press it again, or Esc, to close the history.")
+                } else {
+                    Text("macOS did not accept \(settings.hotKey.displayString): another app may be using it. Choose a different shortcut.")
+                        .foregroundStyle(.orange)
+                }
+            }
+            // The shortcut is registered a moment after it changes; then look whether it took.
+            .task(id: settings.hotKey) {
+                try? await Task.sleep(for: .milliseconds(400))
+                shortcutIsActive = HotKey.shared.combo == settings.hotKey
             }
 
             Section {

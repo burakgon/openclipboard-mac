@@ -148,7 +148,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let controller = onboardingWindow ?? OnboardingWindowController(settings: settings, startingPage: page) { [weak self] in
             self?.onboardingWindow = nil
             self?.settings.hasCompletedOnboarding = true
-            self?.shelf?.show()
+            // Once the welcome window is gone and the app has stepped back, show what all
+            // of it was about.
+            Task {
+                try? await Task.sleep(for: .milliseconds(500))
+                self?.shelf?.show()
+            }
         }
         onboardingWindow = controller
         controller.present()

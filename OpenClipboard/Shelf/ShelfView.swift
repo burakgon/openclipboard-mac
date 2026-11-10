@@ -5,6 +5,7 @@ import SwiftUI
 /// filters on top, the clips in a row, and the available keys underneath.
 struct ShelfView: View {
     @Environment(ShelfController.self) private var shelf
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let model = shelf.model
@@ -22,8 +23,9 @@ struct ShelfView: View {
         .frame(height: Design.shelfHeight)
         .clipShape(shape)
         .glassEffect(.regular, in: shape)
-        .scaleEffect(model.isPresented ? 1 : 0.965, anchor: .bottom)
-        .offset(y: model.isPresented ? 0 : 34)
+        // With Reduce Motion the shelf fades in place instead of rising.
+        .scaleEffect(model.isPresented || reduceMotion ? 1 : 0.965, anchor: .bottom)
+        .offset(y: model.isPresented || reduceMotion ? 0 : 34)
         .opacity(model.isPresented ? 1 : 0)
         .padding(.horizontal, Design.shelfMargin)
         .padding(.bottom, Design.shelfMargin)
@@ -39,7 +41,7 @@ private struct ShelfTopBar: View {
     var body: some View {
         @Bindable var model = shelf.model
         HStack(spacing: 10) {
-            SearchCapsule(text: $model.searchText, focusRequest: model.focusRequest)
+            SearchCapsule(text: $model.searchText, focusRequest: model.focusRequest) { shelf.searchField = $0 }
                 .frame(width: 240)
             FilterBar(selection: $model.filter)
             Spacer(minLength: 8)
@@ -68,6 +70,7 @@ private struct ShelfTopBar: View {
 private struct SearchCapsule: View {
     @Binding var text: String
     let focusRequest: Int
+    let onCreate: (NSTextField) -> Void
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
@@ -75,7 +78,7 @@ private struct SearchCapsule: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 12.5, weight: .medium))
                 .foregroundStyle(.secondary)
-            SearchField(text: $text, focusRequest: focusRequest)
+            SearchField(text: $text, focusRequest: focusRequest, onCreate: onCreate)
             if !text.isEmpty {
                 Button {
                     text = ""
@@ -100,6 +103,7 @@ private struct SearchCapsule: View {
 private struct SearchField: NSViewRepresentable {
     @Binding var text: String
     let focusRequest: Int
+    let onCreate: (NSTextField) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(text: $text) }
 
@@ -116,6 +120,7 @@ private struct SearchField: NSViewRepresentable {
         field.delegate = context.coordinator
         field.setContentHuggingPriority(.defaultLow, for: .horizontal)
         field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        onCreate(field)
         return field
     }
 

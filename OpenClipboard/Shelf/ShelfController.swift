@@ -39,6 +39,9 @@ final class ShelfController: NSObject, NSWindowDelegate {
     /// permission to paste has been given.
     @ObservationIgnored var assumesPastePermission = false
 
+    /// The search field of the shelf. Whatever is typed goes to it.
+    @ObservationIgnored weak var searchField: NSTextField?
+
     /// Opens the settings window. Set by the app delegate.
     @ObservationIgnored var onOpenSettings: (() -> Void)?
 
@@ -190,6 +193,7 @@ final class ShelfController: NSObject, NSWindowDelegate {
     private func handleKeyDown(_ event: NSEvent) -> Bool {
         // While an input method is composing, every key belongs to it.
         if let editor = panel?.firstResponder as? NSTextView, editor.hasMarkedText() { return false }
+        focusSearchField()
 
         let modifiers = event.modifierFlags.intersection(KeyCombo.relevantModifiers)
         let key = Int(event.keyCode)
@@ -241,13 +245,24 @@ final class ShelfController: NSObject, NSWindowDelegate {
             case "p": if let item = model.selectedItem { togglePin(item) }
             case "y": togglePreview()
             case "o": if let item = model.selectedItem { open(item) }
-            case "f": model.focusRequest += 1
-            case "w": hide()
+            case "f": searchField?.selectText(nil)
+            // The shelf has the keyboard, but the app in front is someone else's: ⌘W, ⌘H
+            // and ⌘Q put the shelf away instead of closing, hiding or quitting anything.
+            case "w", "h", "q": hide()
             case ",": openSettings()
             default: return false
             }
         }
         return true
+    }
+
+    /// Makes sure that what is typed lands in the search field, also after a click
+    /// somewhere in the shelf took the keyboard focus away from it.
+    private func focusSearchField() {
+        guard let panel, let searchField, searchField.window === panel else { return }
+        if let editor = panel.firstResponder as? NSTextView, editor.delegate === searchField { return }
+        panel.makeFirstResponder(searchField)
+        searchField.currentEditor()?.selectedRange = NSRange(location: searchField.stringValue.utf16.count, length: 0)
     }
 
     private func escape() {
