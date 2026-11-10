@@ -66,28 +66,54 @@ final class Thumbnails {
 
 /// Thumbnails of copied files, from Quick Look: the first page of a PDF, the picture in an
 /// image file. Files that no longer exist get the plain icon of their type.
+///
+/// macOS guards the folders where people keep their things. An app that looks inside a
+/// file there, as making a thumbnail does, makes the system ask the user for access to the
+/// whole folder. OpenClipboard does not cause that prompt unless the user turned
+/// thumbnails for those folders on: until then such files are shown with their icon,
+/// which needs no access to their content.
 final class FileThumbnails {
     private let cache = NSCache<NSString, NSImage>()
+    private let includesProtectedFolders: () -> Bool
+
+    init(includesProtectedFolders: @escaping () -> Bool) {
+        self.includesProtectedFolders = includesProtectedFolders
+    }
 
     func cached(for path: String, size: CGFloat) -> NSImage? {
-        cache.object(forKey: "\(path)@\(Int(size))" as NSString)
+        cache.object(forKey: key(path, size))
     }
 
     func thumbnail(for path: String, size: CGFloat) async -> NSImage {
-        let key = "\(path)@\(Int(size))" as NSString
+        let key = key(path, size)
         if let cached = cache.object(forKey: key) { return cached }
 
         let url = URL(fileURLWithPath: path)
         var image: NSImage?
         if FileManager.default.fileExists(atPath: path) {
-            let request = QLThumbnailGenerator.Request(
-                fileAt: url, size: CGSize(width: size, height: size),
-                scale: NSScreen.main?.backingScaleFactor ?? 2, representationTypes: .all)
-            image = try? await QLThumbnailGenerator.shared.generateBestRepresentation(for: request).nsImage
+            if includesProtectedFolders() || !Self.isProtected(path) {
+                let request = QLThumbnailGenerator.Request(
+                    fileAt: url, size: CGSize(width: size, height: size),
+                    scale: NSScreen.main?.backingScaleFactor ?? 2, representationTypes: .all)
+                image = try? await QLThumbnailGenerator.shared.generateBestRepresentation(for: request).nsImage
+            }
+            image = image ?? NSWorkspace.shared.icon(forFile: path)
         }
         let result = image ?? Self.genericIcon(for: url)
         cache.setObject(result, forKey: key)
         return result
+    }
+
+    /// The setting is part of the key: changing it takes effect at once.
+    private func key(_ path: String, _ size: CGFloat) -> NSString {
+        "\(path)@\(Int(size))\(includesProtectedFolders() ? "+" : "")" as NSString
+    }
+
+    /// Whether macOS asks the user before an app may read this file.
+    static func isProtected(_ path: String) -> Bool {
+        let home = NSHomeDirectory()
+        let folders = ["Desktop", "Documents", "Downloads", "Library/Mobile Documents", "Library/CloudStorage"]
+        return path.hasPrefix("/Volumes/") || folders.contains { path.hasPrefix("\(home)/\($0)/") }
     }
 
     static func genericIcon(for url: URL) -> NSImage {

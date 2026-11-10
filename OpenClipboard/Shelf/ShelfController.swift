@@ -12,7 +12,7 @@ final class ShelfController: NSObject, NSWindowDelegate {
     @ObservationIgnored let settings: AppSettings
     @ObservationIgnored let appIcons = AppIcons()
     @ObservationIgnored let thumbnails: Thumbnails
-    @ObservationIgnored let fileThumbnails = FileThumbnails()
+    @ObservationIgnored let fileThumbnails: FileThumbnails
 
     /// Whether choosing a clip can paste it, or only copy it. Read by the hint bar.
     private(set) var canPasteDirectly = false
@@ -52,6 +52,7 @@ final class ShelfController: NSObject, NSWindowDelegate {
         self.pasteboard = pasteboard
         model = ShelfModel(store: store)
         thumbnails = Thumbnails(store: store)
+        fileThumbnails = FileThumbnails { settings.previewsProtectedFiles }
         super.init()
     }
 

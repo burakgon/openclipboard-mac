@@ -200,6 +200,12 @@ struct PrivacySettingsPane: View {
             }
 
             Section {
+                Toggle("Show thumbnails for files in Desktop, Documents and Downloads", isOn: $settings.previewsProtectedFiles)
+            } footer: {
+                Text("macOS asks before an app may look inside those folders, and inside iCloud Drive and external disks. While this is off, copied files from there are shown with their icon.")
+            }
+
+            Section {
                 if settings.ignoredApps.isEmpty {
                     Text("No apps are ignored.")
                         .foregroundStyle(.secondary)

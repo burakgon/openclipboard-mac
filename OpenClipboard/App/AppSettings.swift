@@ -53,6 +53,7 @@ final class AppSettings {
         static let showsMenuBarIcon = "showsMenuBarIcon"
         static let pastesDirectly = "pastesDirectly"
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
+        static let previewsProtectedFiles = "previewsProtectedFiles"
     }
 
     @ObservationIgnored private let defaults: UserDefaults
@@ -71,6 +72,12 @@ final class AppSettings {
     var hasCompletedOnboarding: Bool {
         didSet { defaults.set(hasCompletedOnboarding, forKey: Key.hasCompletedOnboarding) }
     }
+    /// Show thumbnails also for copied files in Desktop, Documents, Downloads and iCloud
+    /// Drive. Off by default, because looking inside those folders makes macOS ask for
+    /// access to them.
+    var previewsProtectedFiles: Bool {
+        didSet { defaults.set(previewsProtectedFiles, forKey: Key.previewsProtectedFiles) }
+    }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -87,6 +94,7 @@ final class AppSettings {
         showsMenuBarIcon = defaults.bool(forKey: Key.showsMenuBarIcon)
         pastesDirectly = defaults.bool(forKey: Key.pastesDirectly)
         hasCompletedOnboarding = defaults.bool(forKey: Key.hasCompletedOnboarding)
+        previewsProtectedFiles = defaults.bool(forKey: Key.previewsProtectedFiles)
     }
 
     /// The part of the settings the pasteboard watcher needs.

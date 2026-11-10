@@ -59,7 +59,7 @@ with your Mac: it waits in the background without using the processor at all.
 
 Every kind of clip gets a card made for it: text reads like text, code keeps its indentation in a
 monospaced font, a link shows its site, a picture fills its card, a color is a swatch, a file shows
-its Quick Look thumbnail. Each card says which app it came from and when.
+its icon or its Quick Look thumbnail. Each card says which app it came from and when.
 
 Press <kbd>Space</kbd> on any clip to see it large, the way Quick Look works in Finder: the whole
 text with its formatting, the picture at full size, a color in HEX, RGB and HSL.
@@ -175,6 +175,9 @@ it more than you can check.
   ones apps mark as transient.
 - **Ignore any app.** Add an app in Settings → Privacy and nothing copied from it is recorded.
   Or pause recording altogether from the menu bar.
+- **It does not look into your files.** For a copied file only its location is kept. Thumbnails
+  for files in Desktop, Documents, Downloads and iCloud Drive are off until you turn them on,
+  because they would make macOS ask for access to those folders.
 - **Deleted means deleted.** Removed clips are overwritten in the database, not just unlinked.
 - **It is open source.** Everything above can be read in this repository.
 
