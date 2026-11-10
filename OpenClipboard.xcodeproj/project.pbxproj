@@ -1,0 +1,239 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0C0000000000000000000B01 /* OpenClipboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0C0000000000000000000D01 /* OpenClipboardKit */; };
+		0C0000000000000000000B02 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 0C0000000000000000000D02 /* Sparkle */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0C0000000000000000000F01 /* OpenClipboard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpenClipboard.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0C0000000000000000000F02 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
+		0C0000000000000000000F03 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		0C0000000000000000000F04 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		0C0000000000000000000F05 /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
+		0C0000000000000000000F06 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		0C0000000000000000000A01 /* OpenClipboard */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = OpenClipboard;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		0C0000000000000000000E02 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0C0000000000000000000B01 /* OpenClipboardKit in Frameworks */,
+				0C0000000000000000000B02 /* Sparkle in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0C0000000000000000000101 = {
+			isa = PBXGroup;
+			children = (
+				0C0000000000000000000A01 /* OpenClipboard */,
+				0C0000000000000000000103 /* Config */,
+				0C0000000000000000000102 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		0C0000000000000000000102 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0C0000000000000000000F01 /* OpenClipboard.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0C0000000000000000000103 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				0C0000000000000000000F02 /* Base.xcconfig */,
+				0C0000000000000000000F03 /* Debug.xcconfig */,
+				0C0000000000000000000F04 /* Release.xcconfig */,
+				0C0000000000000000000F05 /* Version.xcconfig */,
+				0C0000000000000000000F06 /* Info.plist */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0C0000000000000000000201 /* OpenClipboard */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0C0000000000000000000302 /* Build configuration list for PBXNativeTarget "OpenClipboard" */;
+			buildPhases = (
+				0C0000000000000000000E01 /* Sources */,
+				0C0000000000000000000E02 /* Frameworks */,
+				0C0000000000000000000E03 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				0C0000000000000000000A01 /* OpenClipboard */,
+			);
+			name = OpenClipboard;
+			packageProductDependencies = (
+				0C0000000000000000000D01 /* OpenClipboardKit */,
+				0C0000000000000000000D02 /* Sparkle */,
+			);
+			productName = OpenClipboard;
+			productReference = 0C0000000000000000000F01 /* OpenClipboard.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		0C0000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2720;
+				LastUpgradeCheck = 2720;
+				TargetAttributes = {
+					0C0000000000000000000201 = {
+						CreatedOnToolsVersion = 27.2;
+					};
+				};
+			};
+			buildConfigurationList = 0C0000000000000000000301 /* Build configuration list for PBXProject "OpenClipboard" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 0C0000000000000000000101;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				0C0000000000000000000C01 /* XCLocalSwiftPackageReference "Packages/OpenClipboardKit" */,
+				0C0000000000000000000C02 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 0C0000000000000000000102 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0C0000000000000000000201 /* OpenClipboard */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0C0000000000000000000E03 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0C0000000000000000000E01 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0C0000000000000000000401 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0C0000000000000000000F03 /* Debug.xcconfig */;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		0C0000000000000000000402 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0C0000000000000000000F04 /* Release.xcconfig */;
+			buildSettings = {
+			};
+			name = Release;
+		};
+		0C0000000000000000000403 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		0C0000000000000000000404 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0C0000000000000000000301 /* Build configuration list for PBXProject "OpenClipboard" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0C0000000000000000000401 /* Debug */,
+				0C0000000000000000000402 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0C0000000000000000000302 /* Build configuration list for PBXNativeTarget "OpenClipboard" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0C0000000000000000000403 /* Debug */,
+				0C0000000000000000000404 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		0C0000000000000000000C01 /* XCLocalSwiftPackageReference "Packages/OpenClipboardKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/OpenClipboardKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0C0000000000000000000C02 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.10.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0C0000000000000000000D01 /* OpenClipboardKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = OpenClipboardKit;
+		};
+		0C0000000000000000000D02 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0C0000000000000000000C02 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 0C0000000000000000000001 /* Project object */;
+}
