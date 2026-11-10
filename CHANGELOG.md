@@ -2,6 +2,14 @@
 
 Notable changes to OpenClipboard, newest first. Versions follow [semantic versioning](https://semver.org).
 
+## 1.0.2
+
+- **Choosing a clip no longer copies it without a word when it was meant to be pasted.** Until macOS has been allowed to let OpenClipboard paste, the shelf now asks the moment you choose a clip: allow pasting, or keep to copying. Before, it copied and showed a small note, which looked as if double-clicking and Return did nothing.
+- The shelf shows an orange "Allow Pasting…" button for as long as the permission is missing, and tells you when it has arrived.
+- In the welcome window, going on without the permission is now a deliberate "Skip for Now", not what the Return key does.
+- A clip chosen while one of OpenClipboard's own windows is in front is pasted into the app you came from, instead of going nowhere.
+- The settings and the welcome window always open in front of other windows.
+
 ## 1.0.1
 
 - If macOS is set to keep apps from reading what other apps copy (Privacy & Security → Paste from Other Apps), OpenClipboard now says so and leads to the setting, instead of quietly recording nothing.

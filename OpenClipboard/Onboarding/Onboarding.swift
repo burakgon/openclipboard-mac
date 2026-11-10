@@ -61,6 +61,9 @@ private struct OnboardingView: View {
     @State private var page: Int
     @State private var isForward = true
     @State private var opensAtLogin = true
+    /// Whether macOS lets OpenClipboard paste. The switch is in System Settings, so it is
+    /// looked at again and again while this window is open.
+    @State private var isTrusted = PasteService.isTrusted
 
     init(settings: AppSettings, page: Int, finish: @escaping () -> Void) {
         self.settings = settings
@@ -73,7 +76,7 @@ private struct OnboardingView: View {
             ZStack {
                 switch page {
                 case 0: WelcomePage()
-                case 1: PermissionPage(settings: settings)
+                case 1: PermissionPage(isTrusted: isTrusted)
                 default: ReadyPage(settings: settings, opensAtLogin: $opensAtLogin)
                 }
             }
@@ -98,22 +101,38 @@ private struct OnboardingView: View {
                     }
                 }
                 Spacer()
-                Button(page == 2 ? "Get Started" : "Continue") {
-                    if page == 2 {
-                        if opensAtLogin { LoginItem.setEnabled(true) }
-                        finish()
-                    } else {
-                        go(to: page + 1)
+                if page == 1, !isTrusted {
+                    // Going on without the permission is a choice, not the default: this
+                    // button does not answer to the Return key, and the one that leads to
+                    // the permission is the prominent one on the page.
+                    Button("Skip for Now") { go(to: page + 1) }
+                        .buttonStyle(.glass)
+                        .controlSize(.large)
+                } else {
+                    Button(page == 2 ? "Get Started" : "Continue") {
+                        if page == 2 {
+                            if opensAtLogin { LoginItem.setEnabled(true) }
+                            finish()
+                        } else {
+                            go(to: page + 1)
+                        }
                     }
+                    .buttonStyle(.glassProminent)
+                    .controlSize(.large)
+                    .keyboardShortcut(.defaultAction)
                 }
-                .buttonStyle(.glassProminent)
-                .controlSize(.large)
-                .keyboardShortcut(.defaultAction)
             }
             .padding(.horizontal, 28)
             .padding(.bottom, 26)
         }
         .frame(width: 540, height: 620)
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(600))
+                let trusted = PasteService.isTrusted
+                if trusted != isTrusted { withAnimation(.smooth) { isTrusted = trusted } }
+            }
+        }
     }
 
     private func go(to target: Int) {
@@ -182,9 +201,7 @@ private struct Feature: View {
 }
 
 private struct PermissionPage: View {
-    let settings: AppSettings
-    @State private var isTrusted = PasteService.isTrusted
-    @State private var hasAsked = false
+    let isTrusted: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -214,32 +231,18 @@ private struct PermissionPage: View {
                 }
                 .padding(.top, 28)
 
-                Button("Open Accessibility Settings") {
-                    if hasAsked {
-                        PasteService.openAccessibilitySettings()
-                    } else {
-                        hasAsked = true
-                        PasteService.requestTrust()
-                    }
-                }
-                .buttonStyle(.glass)
-                .controlSize(.large)
-                .padding(.top, 24)
+                Button("Open Accessibility Settings") { PasteService.askForTrust() }
+                    .buttonStyle(.glassProminent)
+                    .controlSize(.large)
+                    .padding(.top, 24)
 
-                Text("You can skip this. Clips are then copied, and you paste them with ⌘V.")
+                Text("Without it, choosing a clip only copies it, and you paste with ⌘V yourself.")
                     .font(.system(size: 12))
                     .foregroundStyle(.tertiary)
                     .padding(.top, 14)
             }
         }
         .padding(.top, 20)
-        .task {
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .milliseconds(700))
-                let trusted = PasteService.isTrusted
-                if trusted != isTrusted { withAnimation(.smooth) { isTrusted = trusted } }
-            }
-        }
     }
 }
 

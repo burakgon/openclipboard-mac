@@ -23,6 +23,16 @@ enum PasteService {
         NSWorkspace.shared.open(url)
     }
 
+    /// Takes the user to the switch that allows pasting.
+    ///
+    /// Asking macOS puts OpenClipboard into the Accessibility list, and the first time it
+    /// also shows the system's own prompt. That prompt never comes back, so the settings
+    /// are opened as well: whichever of the two is on screen, the switch is one click away.
+    static func askForTrust() {
+        requestTrust()
+        openAccessibilitySettings()
+    }
+
     /// The settings where the user decides whether OpenClipboard may read what other apps copy.
     static func openPasteboardSettings() {
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Pasteboard")!

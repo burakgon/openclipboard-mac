@@ -26,6 +26,13 @@ enum AppWindows {
         DispatchQueue.main.async {
             NSApp.activate()
             window.makeKeyAndOrderFront(nil)
+            // Becoming the active app is a request that macOS may turn down while another
+            // app is in front. The window must not open hidden behind that app's windows
+            // then: it is put in front regardless, where it can be seen and clicked.
+            window.orderFrontRegardless()
+            if !NSApp.isActive {
+                NSRunningApplication.current.activate(options: .activateAllWindows)
+            }
         }
     }
 

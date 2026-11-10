@@ -20,6 +20,8 @@ import SwiftUI
 ///     --settings history     show a pane of the settings window
 ///     --passive              never take the keyboard focus (for unattended screenshots)
 ///     --trusted              show the shelf as it is with the permission to paste
+///     --dry-paste FILE       instead of pressing ⌘V, write the name of the app that would
+///                            have received it to FILE
 enum Demo {
     static let isEnabled = CommandLine.arguments.contains("--demo")
 
@@ -363,6 +365,12 @@ final class DemoDirector {
         if let appearance = Demo.value(of: "--appearance") {
             NSApp.appearance = NSAppearance(named: appearance == "dark" ? .darkAqua : .aqua)
         }
+        if let file = Demo.value(of: "--dry-paste") {
+            shelf.sendPasteKeystroke = {
+                let name = NSWorkspace.shared.frontmostApplication?.localizedName ?? "nothing"
+                try? "\(name)\n".write(toFile: file, atomically: true, encoding: .utf8)
+            }
+        }
         if Demo.has("--backdrop") { showBackdrop() }
         guard Demo.has("--show") else { return }
         Task {
@@ -396,6 +404,8 @@ final class DemoDirector {
         case "pin": if let item = model.selectedItem { shelf.togglePin(item) }
         case "delete": if let item = model.selectedItem { shelf.delete(item) }
         case "return": if let item = model.selectedItem { shelf.paste(item) }
+        case "just-copy": shelf.justCopy()
+        case "esc": shelf.dismissPasteRequest()
         case "show": shelf.show()
         case "hide": shelf.hide()
         default:

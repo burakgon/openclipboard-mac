@@ -45,6 +45,18 @@ private struct ShelfTopBar: View {
                 .frame(width: 240)
             FilterBar(selection: $model.filter)
             Spacer(minLength: 8)
+            if shelf.isClipboardBlocked {
+                // Without this nothing is recorded, so it comes before everything else.
+                WarningButton(
+                    title: "Clipboard access is off",
+                    help: "macOS is not letting OpenClipboard see what you copy. Click to open Privacy & Security → Paste from Other Apps, and choose Allow."
+                ) { shelf.openClipboardAccessSettings() }
+            } else if shelf.settings.pastesDirectly, !shelf.canPasteDirectly {
+                WarningButton(
+                    title: "Allow Pasting…",
+                    help: "Until you allow it, choosing a clip only copies it. Click to let OpenClipboard paste for you."
+                ) { shelf.askForPastePermission() }
+            }
             if shelf.settings.isPaused {
                 PausedBadge { shelf.settings.isPaused = false }
             }
@@ -211,6 +223,26 @@ private struct PausedBadge: View {
     }
 }
 
+/// Something is in the way of the app doing its job, and one click leads to fixing it.
+private struct WarningButton: View {
+    let title: String
+    let help: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: "exclamationmark.triangle.fill")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 11)
+                .frame(height: 26)
+                .background(.orange, in: .capsule)
+        }
+        .buttonStyle(.plain)
+        .help(help)
+    }
+}
+
 private struct BarButton: View {
     let symbol: String
     let help: String
@@ -269,6 +301,13 @@ private struct ClipStrip: View {
                 }
             } else {
                 strip(model)
+                    .opacity(model.pasteRequest == nil ? 1 : 0.22)
+                    .blur(radius: model.pasteRequest == nil ? 0 : 5)
+                    .allowsHitTesting(model.pasteRequest == nil)
+            }
+            if model.pasteRequest != nil {
+                PastePermissionPrompt()
+                    .transition(.scale(scale: 0.96).combined(with: .opacity))
             }
         }
         .frame(height: Design.cardHeight + Design.stripInset * 2)
@@ -378,6 +417,66 @@ private struct ClipStrip: View {
     }
 }
 
+/// Shown the moment a clip is chosen while macOS does not let OpenClipboard paste yet.
+///
+/// The user asked for a paste. Quietly copying instead looks like the app is broken, so
+/// the shelf stays and asks: allow pasting, or keep to copying from now on.
+private struct PastePermissionPrompt: View {
+    @Environment(ShelfController.self) private var shelf
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        HStack(spacing: 18) {
+            Image(systemName: "return")
+                .font(.system(size: 30, weight: .medium))
+                .foregroundStyle(.tint)
+                .frame(width: 64, height: 64)
+                .background(Color.controlFill(scheme), in: .rect(cornerRadius: 18))
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Let OpenClipboard paste for you?")
+                    .font(.system(size: 16, weight: .semibold))
+                Text("To put a clip right where you were typing, OpenClipboard presses ⌘V for you. macOS asks for your permission first, once: turn on OpenClipboard under Privacy & Security → Accessibility.")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("Your clip is copied either way. You can change this later in Settings.")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(maxWidth: 520, alignment: .leading)
+
+            VStack(spacing: 8) {
+                Button {
+                    shelf.allowPasting()
+                } label: {
+                    Text("Allow Pasting…")
+                        .frame(width: 150)
+                }
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
+
+                Button {
+                    shelf.justCopy()
+                } label: {
+                    Text("Just Copy")
+                        .frame(width: 150)
+                }
+                .buttonStyle(.glass)
+                .controlSize(.large)
+            }
+        }
+        .padding(.horizontal, 26)
+        .padding(.vertical, 22)
+        .background(Color.cardFill(scheme, isSelected: true), in: .rect(cornerRadius: 24))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .strokeBorder(Color.cardStroke(scheme), lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.18), radius: 16, y: 6)
+    }
+}
+
 private struct EmptyShelf: View {
     let isFiltering: Bool
     let searchText: String
@@ -435,8 +534,11 @@ private struct ShelfHintBar: View {
         let model = shelf.model
         let item = model.selectedItem
         HStack(spacing: 16) {
-            if let item {
-                Hint(keys: ["↩"], label: shelf.canPasteDirectly ? "Paste" : "Copy")
+            if model.pasteRequest != nil {
+                Hint(keys: ["↩"], label: "Allow Pasting")
+                Hint(keys: ["esc"], label: "Back")
+            } else if let item {
+                Hint(keys: ["↩"], label: shelf.canPasteDirectly || shelf.settings.pastesDirectly ? "Paste" : "Copy")
                 if item.kind == .text || item.kind == .link || item.kind == .file {
                     Hint(keys: ["⇧", "↩"], label: item.kind == .file ? "Paste Path" : "Paste Plain")
                 }
@@ -445,34 +547,13 @@ private struct ShelfHintBar: View {
                 Hint(keys: ["⌘", "⌫"], label: "Delete")
             }
             Spacer(minLength: 8)
-            if shelf.isClipboardBlocked {
-                // Without this nothing is recorded, so it comes before everything else.
-                Button {
-                    shelf.openClipboardAccessSettings()
-                } label: {
-                    Label("macOS is not letting OpenClipboard see what you copy. Allow it…", systemImage: "exclamationmark.triangle.fill")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.orange)
+            if model.pasteRequest == nil {
+                if item != nil {
+                    Hint(keys: ["⌘", "1–9"], label: "Quick Paste")
                 }
-                .buttonStyle(.plain)
-                .help("Open Privacy & Security → Paste from Other Apps, and choose Allow for OpenClipboard")
-            } else if shelf.settings.pastesDirectly, !shelf.canPasteDirectly {
-                // Someone who skipped the welcome window finds the way to pasting here.
-                Button {
-                    shelf.requestPastePermission()
-                } label: {
-                    Label("Allow pasting into apps…", systemImage: "exclamationmark.circle.fill")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.orange)
-                }
-                .buttonStyle(.plain)
-                .help("Let OpenClipboard paste the clip you choose, instead of only copying it")
+                Hint(keys: ["⇥"], label: "Filter")
+                Hint(keys: ["esc"], label: "Close")
             }
-            if item != nil {
-                Hint(keys: ["⌘", "1–9"], label: "Quick Paste")
-            }
-            Hint(keys: ["⇥"], label: "Filter")
-            Hint(keys: ["esc"], label: "Close")
         }
         .frame(height: Design.hintBarHeight)
     }

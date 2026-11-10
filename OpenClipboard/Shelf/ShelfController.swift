@@ -32,7 +32,13 @@ final class ShelfController: NSObject, NSWindowDelegate {
     @ObservationIgnored private var lastClick: (id: ClipItem.ID, time: TimeInterval)?
     @ObservationIgnored private var cacheCleanup: Task<Void, Never>?
     @ObservationIgnored private(set) var isVisible = false
-    @ObservationIgnored private var hasRequestedPastePermission = false
+    /// The app a chosen clip is pasted into: the one in front when the shelf opened.
+    @ObservationIgnored private var targetApp: NSRunningApplication?
+    /// The last app other than OpenClipboard that was in front. It is the target when
+    /// the shelf is opened while one of OpenClipboard's own windows is frontmost.
+    @ObservationIgnored private var lastOtherApp: NSRunningApplication?
+    @ObservationIgnored private var appObserver: NSObjectProtocol?
+    @ObservationIgnored private var trustWatch: Task<Void, Never>?
 
     /// False only while screenshots are staged: the shelf then appears without taking the
     /// keyboard from whoever is at the Mac.
@@ -41,6 +47,10 @@ final class ShelfController: NSObject, NSWindowDelegate {
     /// True only while screenshots are staged, to show the shelf the way it looks once the
     /// permission to paste has been given.
     @ObservationIgnored var assumesPastePermission = false
+
+    /// Presses ⌘V in the app in front. Staged tests replace it, to find out where a paste
+    /// would land without pasting anything anywhere.
+    @ObservationIgnored var sendPasteKeystroke: @MainActor () -> Void = { PasteService.sendPasteKeystroke() }
 
     /// The search field of the shelf. Whatever is typed goes to it.
     @ObservationIgnored weak var searchField: NSTextField?
@@ -57,6 +67,17 @@ final class ShelfController: NSObject, NSWindowDelegate {
         thumbnails = Thumbnails(store: store)
         fileThumbnails = FileThumbnails { settings.previewsProtectedFiles }
         super.init()
+        if let frontmost = NSWorkspace.shared.frontmostApplication, frontmost != .current {
+            lastOtherApp = frontmost
+        }
+        appObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
+        ) { [weak self] notification in
+            let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+            MainActor.assumeIsolated {
+                if let app, app != .current { self?.lastOtherApp = app }
+            }
+        }
     }
 
     // MARK: - Showing and hiding
@@ -69,8 +90,10 @@ final class ShelfController: NSObject, NSWindowDelegate {
         guard !isVisible else { return }
         isVisible = true
         cacheCleanup?.cancel()
-        canPasteDirectly = settings.pastesDirectly && (PasteService.isTrusted || assumesPastePermission)
+        canPasteDirectly = settings.pastesDirectly && isTrusted
         isClipboardBlocked = !SystemClipboard.mayRead(pasteboard)
+        let frontmost = NSWorkspace.shared.frontmostApplication
+        targetApp = frontmost == .current ? lastOtherApp : frontmost
 
         let panel = panel ?? makePanel()
         panel.setFrame(shelfFrame(on: activeScreen()), display: false)
@@ -92,6 +115,7 @@ final class ShelfController: NSObject, NSWindowDelegate {
         isVisible = false
         removeMonitors()
         hidePreview()
+        model.pasteRequest = nil
 
         if animated {
             withAnimation(Design.disappear) {
@@ -198,6 +222,16 @@ final class ShelfController: NSObject, NSWindowDelegate {
     private func handleKeyDown(_ event: NSEvent) -> Bool {
         // While an input method is composing, every key belongs to it.
         if let editor = panel?.firstResponder as? NSTextView, editor.hasMarkedText() { return false }
+
+        // While the shelf asks whether it may paste, the keys answer that question.
+        if model.pasteRequest != nil {
+            switch Int(event.keyCode) {
+            case kVK_Return, kVK_ANSI_KeypadEnter: allowPasting()
+            case kVK_Escape: withAnimation(Design.select) { model.pasteRequest = nil }
+            default: break
+            }
+            return true
+        }
         focusSearchField()
 
         let modifiers = event.modifierFlags.intersection(KeyCombo.relevantModifiers)
@@ -312,21 +346,77 @@ final class ShelfController: NSObject, NSWindowDelegate {
         delete(item)
     }
 
+    /// Whether macOS lets OpenClipboard press ⌘V in other apps.
+    private var isTrusted: Bool { PasteService.isTrusted || assumesPastePermission }
+
     /// Puts the clip on the pasteboard and pastes it into the app the user came from.
     func paste(_ item: ClipItem, asPlainText: Bool = false) {
+        // The permission may have been given a moment ago, while the shelf was open.
+        canPasteDirectly = settings.pastesDirectly && isTrusted
+        if settings.pastesDirectly, !canPasteDirectly {
+            // The user expects a paste and would get a copy. Say so and ask, rather than
+            // let them wonder why nothing arrived.
+            setPreviewing(false)
+            withAnimation(Design.select) { model.pasteRequest = .init(item: item, asPlainText: asPlainText) }
+            return
+        }
         Task {
             guard await write(item, asPlainText: asPlainText) else { return }
             if canPasteDirectly {
                 // No animation: the keystroke has to wait until the shelf is gone and the
                 // app underneath has the keyboard again.
                 hide(animated: false)
-                try? await Task.sleep(for: .milliseconds(70))
-                PasteService.sendPasteKeystroke()
+                await bringTargetForward()
+                sendPasteKeystroke()
             } else {
                 hide()
                 toast.show("Copied", detail: "Press ⌘V to paste", symbol: "doc.on.clipboard.fill")
             }
         }
+    }
+
+    /// Makes sure the keystroke that follows lands in the app the user came from.
+    ///
+    /// Usually that app never stopped being the active one: the shelf is a panel that
+    /// takes the keyboard without activating OpenClipboard. But the shelf can also be
+    /// opened while OpenClipboard itself is in front, right after its settings or its
+    /// welcome window closed. Then the app the user came from is brought forward first.
+    private func bringTargetForward() async {
+        if let target = targetApp, !target.isTerminated, target != .current,
+           NSWorkspace.shared.frontmostApplication != target {
+            // OpenClipboard is the active app here, and hands that over.
+            NSApp.yieldActivation(to: target)
+            target.activate(from: .current, options: [])
+            for _ in 0..<30 where !target.isActive {
+                try? await Task.sleep(for: .milliseconds(20))
+            }
+        }
+        // A moment for the window that had the keyboard before the shelf to get it back.
+        try? await Task.sleep(for: .milliseconds(70))
+    }
+
+    /// The answer "yes" to the shelf's question. The clip is copied in any case, so that
+    /// nothing is lost while the user is in System Settings.
+    func allowPasting() {
+        guard let request = model.pasteRequest else { return }
+        Task {
+            _ = await write(request.item, asPlainText: request.asPlainText)
+            hide()
+            askForPastePermission()
+        }
+    }
+
+    /// The answer "no": from now on choosing a clip copies it, and nobody is asked again.
+    func justCopy() {
+        guard let request = model.pasteRequest else { return }
+        settings.pastesDirectly = false
+        canPasteDirectly = false
+        model.pasteRequest = nil
+        paste(request.item, asPlainText: request.asPlainText)
+    }
+
+    func dismissPasteRequest() {
+        withAnimation(Design.select) { model.pasteRequest = nil }
     }
 
     /// Puts the clip on the pasteboard without pasting it.
@@ -407,15 +497,23 @@ final class ShelfController: NSObject, NSWindowDelegate {
         PasteService.openPasteboardSettings()
     }
 
-    /// Leads to the Accessibility permission that pasting into other apps needs. The first
-    /// time, macOS shows its own prompt; after that only the settings pane is left.
-    func requestPastePermission() {
+    /// Leads to the Accessibility permission that pasting into other apps needs, and tells
+    /// the user when it has arrived: the switch is in another app, and without a word
+    /// from OpenClipboard there would be no telling whether flipping it worked.
+    func askForPastePermission() {
         hide()
-        if hasRequestedPastePermission {
-            PasteService.openAccessibilitySettings()
-        } else {
-            hasRequestedPastePermission = true
-            PasteService.requestTrust()
+        PasteService.askForTrust()
+        trustWatch?.cancel()
+        trustWatch = Task { [weak self] in
+            for _ in 0..<360 {
+                try? await Task.sleep(for: .milliseconds(500))
+                guard let self, !Task.isCancelled else { return }
+                if PasteService.isTrusted {
+                    self.canPasteDirectly = self.settings.pastesDirectly
+                    self.toast.show("Pasting is on", detail: "Choose a clip and press Return", symbol: "checkmark.circle.fill")
+                    return
+                }
+            }
         }
     }
 

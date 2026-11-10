@@ -69,7 +69,6 @@ struct GeneralSettingsPane: View {
 /// Whether macOS lets OpenClipboard paste into other apps, and the way to allow it.
 struct AccessibilityStatusRow: View {
     @State private var isTrusted = PasteService.isTrusted
-    @State private var hasAsked = false
 
     var body: some View {
         HStack(spacing: 8) {
@@ -85,15 +84,7 @@ struct AccessibilityStatusRow: View {
             }
             Spacer()
             if !isTrusted {
-                Button("Allow…") {
-                    // The system prompt appears once; after that the settings are opened directly.
-                    if hasAsked {
-                        PasteService.openAccessibilitySettings()
-                    } else {
-                        hasAsked = true
-                        PasteService.requestTrust()
-                    }
-                }
+                Button("Allow…") { PasteService.askForTrust() }
             }
         }
         // There is no notification for this permission, so it is checked while visible.

@@ -136,7 +136,8 @@ notarized by Apple.
 
 **The one permission.** To paste a clip into another app, OpenClipboard has to press
 <kbd>⌘</kbd><kbd>V</kbd> for you, and macOS only lets an app do that once you allow it under
-*System Settings → Privacy & Security → Accessibility*. You can skip it: choosing a clip then
+*System Settings → Privacy & Security → Accessibility*. The welcome window and the shelf both lead
+you there, and the shelf tells you when it worked. You can also say no: choosing a clip then
 copies it, and you press <kbd>⌘</kbd><kbd>V</kbd> yourself.
 
 ## Keyboard
@@ -183,8 +184,11 @@ it more than you can check.
 
 ## FAQ
 
-**Does it work without the Accessibility permission?**<br>
-Yes. Choosing a clip then puts it on the clipboard, and you paste with <kbd>⌘</kbd><kbd>V</kbd>.
+**I double-click a clip, or press Return, and nothing is pasted.**<br>
+macOS has not been allowed to let OpenClipboard paste yet. Open the shelf and click the orange
+*Allow Pasting…* button, or turn on OpenClipboard under *System Settings → Privacy & Security →
+Accessibility*. Without the permission a clip is only copied, and you paste it with
+<kbd>⌘</kbd><kbd>V</kbd>.
 
 **⇧⌘V is “Paste and Match Style” in the app I use.**<br>
 While OpenClipboard runs, its shortcut wins. Choose another one in Settings → General, or use

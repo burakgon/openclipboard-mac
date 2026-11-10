@@ -47,6 +47,12 @@ final class ShelfModel {
         }
     }
 
+    /// A clip the user chose while macOS does not yet let OpenClipboard paste.
+    struct PasteRequest: Equatable {
+        var item: ClipItem
+        var asPlainText: Bool
+    }
+
     static let pageSize = 60
 
     @ObservationIgnored let store: HistoryStore
@@ -83,6 +89,9 @@ final class ShelfModel {
     var focusRequest = 0
     /// Where the selected card is, in the coordinates of the shelf window.
     var selectedCardFrame = CGRect.zero
+    /// Set while the shelf asks whether OpenClipboard may paste. The answer decides what
+    /// happens to this clip.
+    var pasteRequest: PasteRequest?
 
     @ObservationIgnored private var generation = 0
     @ObservationIgnored private var observation: Task<Void, Never>?
@@ -122,6 +131,7 @@ final class ShelfModel {
         isPreviewing = false
         isCommandDown = false
         hasChosen = false
+        pasteRequest = nil
         if searchText.isEmpty, filter == .all {
             reload(keepingSelection: false)
         } else {
