@@ -22,6 +22,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.mainMenu = MainMenu.make(target: self)
+        guard confirmLocation() else {
+            NSApp.terminate(nil)
+            return
+        }
 
         let store: HistoryStore
         do {
@@ -128,6 +132,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 _ = try? await store.prune(olderThan: settings.retention.cutoff())
             }
         })
+    }
+
+    /// An app that is opened straight from its disk image, or from the Downloads folder
+    /// without having been moved, runs from a place that goes away or cannot be written
+    /// to: it would vanish when the image is ejected, and it could not update itself or
+    /// open at login. Better to say so once than to let that happen quietly.
+    private func confirmLocation() -> Bool {
+        let path = Bundle.main.bundlePath
+        guard !Demo.isEnabled, path.hasPrefix("/Volumes/") || path.contains("/AppTranslocation/") else { return true }
+        NSApp.activate()
+        let alert = NSAlert()
+        alert.messageText = "Move OpenClipboard to your Applications folder first"
+        alert.informativeText = "It is running from where it was downloaded. Drag OpenClipboard to the Applications folder and open it from there, so that it can stay open, update itself and open at login."
+        alert.addButton(withTitle: "Quit")
+        alert.addButton(withTitle: "Open Anyway")
+        return alert.runModal() == .alertSecondButtonReturn
     }
 
     private func reportUnusableHistory(_ error: Error) {

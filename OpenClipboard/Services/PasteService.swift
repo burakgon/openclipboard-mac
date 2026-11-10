@@ -23,6 +23,12 @@ enum PasteService {
         NSWorkspace.shared.open(url)
     }
 
+    /// The settings where the user decides whether OpenClipboard may read what other apps copy.
+    static func openPasteboardSettings() {
+        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Pasteboard")!
+        NSWorkspace.shared.open(url)
+    }
+
     /// Posts ⌘V. The key code is looked up in the current keyboard layout: "V" is not in
     /// the same place on every keyboard.
     static func sendPasteKeystroke() {

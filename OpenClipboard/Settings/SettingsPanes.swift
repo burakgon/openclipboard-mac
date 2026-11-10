@@ -192,6 +192,23 @@ struct PrivacySettingsPane: View {
                 }
             }
 
+            if !SystemClipboard.mayRead(.general) {
+                Section {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("macOS is not letting OpenClipboard see what you copy")
+                            Text("Nothing is recorded until you choose Allow under Paste from Other Apps.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button("Open Settings…") { PasteService.openPasteboardSettings() }
+                    }
+                }
+            }
+
             Section {
                 Toggle("Skip passwords and other secrets", isOn: $settings.skipConfidential)
                 Toggle("Pause recording", isOn: $settings.isPaused)

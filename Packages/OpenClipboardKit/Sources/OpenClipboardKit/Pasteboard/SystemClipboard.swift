@@ -61,6 +61,21 @@ public actor SystemClipboard {
         }
     }
 
+    /// Whether the pasteboard can be read without macOS asking the user about it.
+    ///
+    /// macOS can require an app to ask each time it reads what another app copied, or
+    /// refuse it outright; the user decides under Privacy & Security → Paste from Other
+    /// Apps. A clipboard manager that read anyway would put up that question after every
+    /// copy. So when the answer is not a plain yes, nothing is read, and the app explains
+    /// instead. An app that has never been asked may read: that is the first question.
+    public nonisolated static func mayRead(_ pasteboard: NSPasteboard) -> Bool {
+        switch pasteboard.accessBehavior {
+        case .alwaysAllow, .default: true
+        case .ask, .alwaysDeny: false
+        @unknown default: true
+        }
+    }
+
     public func update(_ settings: Settings) {
         self.settings = settings
     }
@@ -95,7 +110,7 @@ public actor SystemClipboard {
         let changeCount = pasteboard.changeCount
         guard changeCount != lastChangeCount else { return }
         lastChangeCount = changeCount
-        guard !settings.isPaused else { return }
+        guard !settings.isPaused, Self.mayRead(pasteboard) else { return }
 
         let source = attributingToFrontmostApp ? await frontmostApp() : nil
         if let bundleID = source?.bundleID, settings.ignoredBundleIDs.contains(bundleID) { return }

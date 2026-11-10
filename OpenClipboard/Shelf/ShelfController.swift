@@ -16,6 +16,9 @@ final class ShelfController: NSObject, NSWindowDelegate {
 
     /// Whether choosing a clip can paste it, or only copy it. Read by the hint bar.
     private(set) var canPasteDirectly = false
+    /// True when macOS does not let OpenClipboard read what is copied. Nothing is recorded
+    /// then, and the shelf says why instead of just staying empty.
+    private(set) var isClipboardBlocked = false
 
     @ObservationIgnored private let store: HistoryStore
     @ObservationIgnored private let clipboard: SystemClipboard
@@ -67,6 +70,7 @@ final class ShelfController: NSObject, NSWindowDelegate {
         isVisible = true
         cacheCleanup?.cancel()
         canPasteDirectly = settings.pastesDirectly && (PasteService.isTrusted || assumesPastePermission)
+        isClipboardBlocked = !SystemClipboard.mayRead(pasteboard)
 
         let panel = panel ?? makePanel()
         panel.setFrame(shelfFrame(on: activeScreen()), display: false)
@@ -395,6 +399,12 @@ final class ShelfController: NSObject, NSWindowDelegate {
     func openSettings() {
         hide()
         onOpenSettings?()
+    }
+
+    /// Leads to the setting that lets OpenClipboard read what other apps copy.
+    func openClipboardAccessSettings() {
+        hide()
+        PasteService.openPasteboardSettings()
     }
 
     /// Leads to the Accessibility permission that pasting into other apps needs. The first

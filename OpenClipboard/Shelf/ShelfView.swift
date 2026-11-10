@@ -445,7 +445,18 @@ private struct ShelfHintBar: View {
                 Hint(keys: ["⌘", "⌫"], label: "Delete")
             }
             Spacer(minLength: 8)
-            if shelf.settings.pastesDirectly, !shelf.canPasteDirectly {
+            if shelf.isClipboardBlocked {
+                // Without this nothing is recorded, so it comes before everything else.
+                Button {
+                    shelf.openClipboardAccessSettings()
+                } label: {
+                    Label("macOS is not letting OpenClipboard see what you copy. Allow it…", systemImage: "exclamationmark.triangle.fill")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.orange)
+                }
+                .buttonStyle(.plain)
+                .help("Open Privacy & Security → Paste from Other Apps, and choose Allow for OpenClipboard")
+            } else if shelf.settings.pastesDirectly, !shelf.canPasteDirectly {
                 // Someone who skipped the welcome window finds the way to pasting here.
                 Button {
                     shelf.requestPastePermission()
