@@ -80,6 +80,18 @@ enum Demo {
         return [item]
     }
 
+    /// Text the way an app in dark mode copies it: with its color, white, and no background.
+    private static func textFromDarkMode(_ string: String) -> ClipContents {
+        let attributed = NSAttributedString(string: string, attributes: [
+            .font: NSFont.systemFont(ofSize: 13), .foregroundColor: NSColor.white,
+        ])
+        var item = [ClipRepresentation(type: ClipType.plainText, data: Data(string.utf8))]
+        if let rtf = attributed.rtf(from: NSRange(location: 0, length: attributed.length)) {
+            item.insert(ClipRepresentation(type: ClipType.rtf, data: rtf), at: 0)
+        }
+        return [item]
+    }
+
     private static func picture(_ data: Data) -> ClipContents {
         [[ClipRepresentation(type: ClipType.png, data: data)]]
     }
@@ -138,6 +150,7 @@ enum Demo {
             Sample(contents: text("Best regards,\nAlex Morgan\nalex@example.com"), app: mail, age: 86_400, isPinned: true),
             Sample(contents: text("https://developer.apple.com/design/human-interface-guidelines"), app: safari, age: 3600 * 9),
             Sample(contents: text(letter, rich: true), app: mail, age: 3600 * 5),
+            Sample(contents: textFromDarkMode("Sounds good, see you at seven. I will bring the charger 😄"), app: messages, age: 3600 * 4),
             Sample(contents: text("#0A84FF"), app: colorMeter, age: 3600 * 3),
             Sample(contents: files([guidelines, poster, releaseNotes]), app: finder, age: 3600 * 2),
             Sample(contents: text("git log --oneline --graph --decorate -20"), app: terminal, age: 3600),

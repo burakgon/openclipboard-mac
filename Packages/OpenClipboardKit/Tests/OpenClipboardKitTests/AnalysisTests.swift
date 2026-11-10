@@ -43,6 +43,29 @@ import Testing
     }
 }
 
+@Suite struct PageToneTests {
+    private func color(_ hex: String) -> RGBAColor { ColorParser.parse(hex)! }
+
+    @Test func darkTextGetsAWhitePage() {
+        #expect(PageTone.suiting([(color("#000000"), 100)]) == .light)
+        #expect(PageTone.suiting([(color("#333333"), 80), (color("#0066CC"), 20)]) == .light)
+        #expect(PageTone.suiting([(color("#CC0000"), 10)]) == .light)
+    }
+
+    @Test func lightTextGetsADarkPage() {
+        // What Telegram copies in dark mode: white, which a white page swallows.
+        #expect(PageTone.suiting([(color("#FFFFFF"), 13)]) == .dark)
+        // A dark editor theme: no color is near white, and all of them need a dark page.
+        #expect(PageTone.suiting([(color("#D4D4D4"), 40), (color("#569CD6"), 20), (color("#CE9178"), 20), (color("#6A9955"), 20)]) == .dark)
+    }
+
+    @Test func theMajorityDecides() {
+        #expect(PageTone.suiting([(color("#111111"), 200), (color("#FFD60A"), 6)]) == .light)
+        #expect(PageTone.suiting([(color("#F2F2F7"), 200), (color("#0A84FF"), 12)]) == .dark)
+        #expect(PageTone.suiting([]) == .light)
+    }
+}
+
 @Suite struct TextAnalysisTests {
     @Test func foldsForSearching() {
         #expect(TextAnalysis.folded("Crème BRÛLÉE") == "creme brulee")

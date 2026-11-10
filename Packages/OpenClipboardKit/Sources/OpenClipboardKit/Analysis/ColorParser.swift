@@ -63,6 +63,34 @@ public struct RGBAColor: Sendable, Hashable {
     }
 }
 
+/// The background that formatted text should be shown on, judged by its own colors.
+public enum PageTone: Sendable, Equatable {
+    /// A white page: the text is dark, as it is when copied from a document or a web page.
+    case light
+    /// A dark page: the text is light, as it is when copied from an app in dark mode.
+    case dark
+
+    /// The luminance of the dark page, a near black.
+    static let darkPageLuminance = 0.012
+
+    /// Chooses the page on which text in the given colors is easier to read. Each color
+    /// counts for as many characters as are drawn in it.
+    ///
+    /// The measure is the contrast ratio of the Web Content Accessibility Guidelines,
+    /// summed over the text for a white page and for a dark one. Text of any color with a
+    /// luminance above about 0.2 reads better on dark, which is why a threshold of one
+    /// half would be wrong: the blues and oranges of a dark editor theme are well below it.
+    public static func suiting(_ colors: [(color: RGBAColor, characters: Int)]) -> PageTone {
+        var onWhite = 0.0, onDark = 0.0
+        for (color, characters) in colors {
+            let luminance = color.luminance
+            onWhite += Double(characters) * (1.05 / (luminance + 0.05))
+            onDark += Double(characters) * ((luminance + 0.05) / (darkPageLuminance + 0.05))
+        }
+        return onDark > onWhite ? .dark : .light
+    }
+}
+
 /// Recognizes copied text that is nothing but a CSS color: `#1E90FF`, `#fff`, `rgb(30 144 255)`,
 /// `rgba(30, 144, 255, 0.5)`, `hsl(210, 100%, 56%)`.
 public enum ColorParser {

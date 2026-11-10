@@ -2,6 +2,10 @@
 
 Notable changes to OpenClipboard, newest first. Versions follow [semantic versioning](https://semver.org).
 
+## 1.0.3
+
+- **Formatted text from an app in dark mode is readable in the preview.** Such text is copied with its color, white, and was shown on a white page: only an emoji gave away that anything was there. The page now follows the text: light text gets a dark page, dark text a white one, and text that names no color is shown in the system's color.
+
 ## 1.0.2
 
 - **Choosing a clip no longer copies it without a word when it was meant to be pasted.** Until macOS has been allowed to let OpenClipboard paste, the shelf now asks the moment you choose a clip: allow pasting, or keep to copying. Before, it copied and showed a small note, which looked as if double-clicking and Return did nothing.

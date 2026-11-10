@@ -155,11 +155,22 @@ private struct PreviewView: View {
 
 // MARK: - Text
 
+/// What the text of a preview is shown on.
+private enum Paper: Equatable {
+    /// Straight on the glass, in the system's text color: plain text, and formatted text
+    /// that names no colors of its own.
+    case none
+    /// A white page, for text in dark colors.
+    case light
+    /// A dark page, for text in light colors.
+    case dark
+}
+
 private struct TextPreview: View {
     let item: ClipItem
     @Environment(ShelfController.self) private var shelf
     @State private var text: NSAttributedString?
-    @State private var isFormatted = false
+    @State private var paper = Paper.none
 
     /// More than this is not laid out: a preview is for looking, not for reading a book.
     private static let limit = 200_000
@@ -167,9 +178,9 @@ private struct TextPreview: View {
     var body: some View {
         ZStack {
             if let text {
-                TextViewer(text: text, isPaper: isFormatted)
-                    .clipShape(.rect(cornerRadius: isFormatted ? 12 : 0))
-                    .padding(.horizontal, isFormatted ? 12 : 4)
+                TextViewer(text: text, paper: paper)
+                    .clipShape(.rect(cornerRadius: paper == .none ? 0 : 12))
+                    .padding(.horizontal, paper == .none ? 4 : 12)
             }
         }
         .task(id: item.id) { await load() }
@@ -187,8 +198,7 @@ private struct TextPreview: View {
            let formatted = try? NSAttributedString(
                data: rtf, options: [.documentType: NSAttributedString.DocumentType.rtf], documentAttributes: nil),
            formatted.length <= Self.limit {
-            text = formatted
-            isFormatted = true
+            (text, paper) = Self.onSuitablePaper(formatted)
             return
         }
         guard let data = try? await shelf.model.store.data(of: item.id, type: ClipType.plainText) else { return }
@@ -202,14 +212,45 @@ private struct TextPreview: View {
             .font: font, .foregroundColor: NSColor.labelColor, .paragraphStyle: paragraph,
         ])
     }
+
+    /// Chooses what formatted text is shown on, by the colors it was copied with.
+    ///
+    /// Formatted text carries its colors but rarely its background. Text from a document
+    /// is black and belongs on white; text from an app in dark mode is white, and on a
+    /// white page it would be invisible. So the page follows the text. Text that names no
+    /// color at all is shown like plain text, in the system's color.
+    private static func onSuitablePaper(_ formatted: NSAttributedString) -> (NSAttributedString, Paper) {
+        let whole = NSRange(location: 0, length: formatted.length)
+        var colors: [(color: RGBAColor, characters: Int)] = []
+        var uncolored: [NSRange] = []
+        formatted.enumerateAttribute(.foregroundColor, in: whole) { value, range, _ in
+            guard let color = value as? NSColor else {
+                uncolored.append(range)
+                return
+            }
+            // Colors such as "label color" adapt to their surroundings by themselves.
+            guard color.type == .componentBased, let rgb = color.usingColorSpace(.sRGB) else { return }
+            colors.append((RGBAColor(red: rgb.redComponent, green: rgb.greenComponent, blue: rgb.blueComponent), range.length))
+        }
+
+        let text = NSMutableAttributedString(attributedString: formatted)
+        guard !colors.isEmpty else {
+            for range in uncolored { text.addAttribute(.foregroundColor, value: NSColor.labelColor, range: range) }
+            return (text, .none)
+        }
+        let paper: Paper = PageTone.suiting(colors) == .dark ? .dark : .light
+        for range in uncolored {
+            text.addAttribute(.foregroundColor, value: paper == .dark ? NSColor.white : NSColor.black, range: range)
+        }
+        return (text, paper)
+    }
 }
 
 /// A read-only text view. AppKit's text view lays out lazily, so a very long clip opens
 /// as fast as a short one, which SwiftUI's `Text` cannot do.
 private struct TextViewer: NSViewRepresentable {
     let text: NSAttributedString
-    /// Formatted text is shown the way it was written: on a white page.
-    let isPaper: Bool
+    let paper: Paper
 
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSTextView.scrollableTextView()
@@ -226,10 +267,21 @@ private struct TextViewer: NSViewRepresentable {
 
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
         guard let textView = scrollView.documentView as? NSTextView else { return }
-        textView.drawsBackground = isPaper
-        textView.backgroundColor = .white
-        // A page is white in dark mode too; its text must not turn white with the system.
-        scrollView.appearance = isPaper ? NSAppearance(named: .aqua) : nil
+        // A page keeps its color whatever the system's appearance is, and so do the
+        // scroll bar and anything else drawn on it.
+        switch paper {
+        case .none:
+            textView.drawsBackground = false
+            scrollView.appearance = nil
+        case .light:
+            textView.drawsBackground = true
+            textView.backgroundColor = .white
+            scrollView.appearance = NSAppearance(named: .aqua)
+        case .dark:
+            textView.drawsBackground = true
+            textView.backgroundColor = NSColor(white: 0.11, alpha: 1)
+            scrollView.appearance = NSAppearance(named: .darkAqua)
+        }
         if textView.textStorage?.isEqual(to: text) != true {
             textView.textStorage?.setAttributedString(text)
             // Replacing the text leaves the insertion point at its end, and a text view
