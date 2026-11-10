@@ -21,9 +21,9 @@ enum Design {
         shelfPadding + topBarHeight + cardHeight + stripInset * 2 + hintBarHeight + shelfPadding - 2
     }
 
-    /// Transparent space above the shelf inside its window: the shelf rises through it
-    /// when it appears, and its shadow needs somewhere to fall.
-    static let shelfHeadroom: CGFloat = 44
+    /// Transparent space above the shelf inside its window, for the little overshoot of
+    /// the spring it appears with. Kept small: what is behind it should stay clickable.
+    static let shelfHeadroom: CGFloat = 14
 
     static let appear = Animation.spring(duration: 0.36, bounce: 0.2)
     static let disappear = Animation.easeIn(duration: 0.14)
