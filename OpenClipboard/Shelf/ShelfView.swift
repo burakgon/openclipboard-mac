@@ -280,16 +280,10 @@ private struct SelectedFrameKey: PreferenceKey {
 private final class ScrollTracker {
     /// The part of the content that is visible, in the coordinates of the content.
     var visibleRect = CGRect.zero
-    /// True while a scroll that the keyboard started is being animated.
-    var isAnimating = false
-    /// When the keyboard last scrolled the strip.
-    var lastScroll: TimeInterval = 0
 }
 
 private struct ClipStrip: View {
     @Environment(ShelfController.self) private var shelf
-    @State private var position = ScrollPosition(idType: ClipItem.ID.self)
-    @State private var tracker = ScrollTracker()
 
     var body: some View {
         let model = shelf.model
@@ -300,7 +294,10 @@ private struct ClipStrip: View {
                         .transition(.opacity)
                 }
             } else {
-                strip(model)
+                // A new scroller each time the shelf opens: it starts at the newest clip
+                // again, wherever it was left the last time.
+                ClipScroller()
+                    .id(model.presentedAt)
                     .opacity(model.pasteRequest == nil ? 1 : 0.22)
                     .blur(radius: model.pasteRequest == nil ? 0 : 5)
                     .allowsHitTesting(model.pasteRequest == nil)
@@ -313,8 +310,18 @@ private struct ClipStrip: View {
         .frame(height: Design.cardHeight + Design.stripInset * 2)
         .frame(maxWidth: .infinity)
     }
+}
 
-    private func strip(_ model: ShelfModel) -> some View {
+/// The row of cards. When it scrolls by itself, and when it must leave the user's own
+/// scrolling alone, is decided by `StripScrolling`; this view reports what happens to the
+/// scroll view and carries out the scrolls it is told to.
+private struct ClipScroller: View {
+    @Environment(ShelfController.self) private var shelf
+    @State private var position = ScrollPosition(idType: ClipItem.ID.self)
+    @State private var tracker = ScrollTracker()
+
+    var body: some View {
+        let model = shelf.model
         ScrollView(.horizontal) {
             LazyHStack(spacing: Design.cardSpacing) {
                 ForEach(model.items) { item in
@@ -342,7 +349,7 @@ private struct ClipStrip: View {
             .padding(.vertical, Design.stripInset)
         }
         .scrollPosition($position)
-        .contentMargins(.horizontal, Self.margin, for: .scrollContent)
+        .contentMargins(.horizontal, Design.stripMargin, for: .scrollContent)
         .scrollIndicators(.never)
         .mask {
             // Cards fade out at the two ends of the shelf instead of being cut off.
@@ -363,11 +370,13 @@ private struct ClipStrip: View {
             tracker.visibleRect = rect
         }
         .onScrollPhaseChange { _, phase in
-            tracker.isAnimating = phase == .animating
-            // A scroll that was asked for while another one was still animating is not
-            // reliably carried out. So nothing is asked for then; instead, every time
-            // the strip comes to rest, the selected card is brought into view if needed.
-            if phase == .idle { reveal(model) }
+            let now: StripScrolling.Phase = switch phase {
+            case .idle: .resting
+            case .animating: .animating
+            // Tracking, interacting, decelerating: the user's hand is on it.
+            default: .byHand
+            }
+            if model.scrolling.phaseChanged(to: now) { reveal(model) }
         }
         .onPreferenceChange(SelectedFrameKey.self) { frame in
             model.selectedCardFrame = frame
@@ -377,42 +386,16 @@ private struct ClipStrip: View {
         .onChange(of: model.items.first?.id) { reveal(model) }
     }
 
-    private static let margin = Design.shelfPadding + 4
-
-    /// Scrolls just far enough for the selected card to be in view.
-    ///
-    /// Every card has the same width, so where a card is follows from its index. That is
-    /// more dependable than asking the lazy stack to scroll to a card: it only knows the
-    /// cards it has built, and holding an arrow key outruns it.
+    /// Scrolls just far enough for the selected card to be in view, if the rules allow it.
     private func reveal(_ model: ShelfModel) {
-        guard !tracker.isAnimating, let index = model.selectedIndex else { return }
         let visible = tracker.visibleRect
-        guard visible.width > 0 else { return }
-
-        let minX = CGFloat(index) * (Design.cardWidth + Design.cardSpacing)
-        let maxX = minX + Design.cardWidth
-        let target: CGFloat
-        if minX - Self.margin < visible.minX {
-            target = minX - Self.margin
-        } else if maxX + Self.margin > visible.maxX {
-            target = maxX + Self.margin - visible.width
-        } else {
-            return
-        }
-
-        // A single step glides. A held arrow key steps without animation, so that the
-        // selection never runs ahead of what is on screen.
-        let now = ProcessInfo.processInfo.systemUptime
-        let isRepeating = now - tracker.lastScroll < 0.4
-        tracker.lastScroll = now
-        // The scroll offset counts from the start of the leading margin, the visible
-        // rectangle from the first card.
-        let offset = target + Self.margin
-        if isRepeating {
-            position.scrollTo(x: offset)
-        } else {
-            tracker.isAnimating = true
-            withAnimation(Design.select) { position.scrollTo(x: offset) }
+        let command = model.scrolling.reveal(
+            index: model.selectedIndex, visibleMinX: visible.minX, visibleWidth: visible.width,
+            now: ProcessInfo.processInfo.systemUptime)
+        switch command {
+        case .glide(let offset): withAnimation(Design.select) { position.scrollTo(x: offset) }
+        case .snap(let offset): position.scrollTo(x: offset)
+        case nil: break
         }
     }
 }

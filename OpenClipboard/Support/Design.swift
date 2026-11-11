@@ -12,6 +12,9 @@ enum Design {
 
     static let shelfCornerRadius: CGFloat = 32
     static let shelfPadding: CGFloat = 14
+    /// Space between the first and last card and the ends of the strip, and what is kept
+    /// free next to a card that is scrolled into view.
+    static let stripMargin: CGFloat = shelfPadding + 4
     /// Gap between the shelf and the edges of the screen.
     static let shelfMargin: CGFloat = 10
     static let topBarHeight: CGFloat = 34

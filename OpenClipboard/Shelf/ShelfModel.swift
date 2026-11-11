@@ -76,6 +76,12 @@ final class ShelfModel {
     /// follows the newest clip, so that something copied a moment before opening the
     /// shelf, and only noticed now, is what Return pastes.
     @ObservationIgnored private var hasChosen = false
+    /// When the row of cards scrolls by itself, and when it must not: see `StripScrolling`.
+    @ObservationIgnored var scrolling = ShelfModel.makeScrolling()
+
+    private static func makeScrolling() -> StripScrolling {
+        StripScrolling(cardWidth: Design.cardWidth, spacing: Design.cardSpacing, margin: Design.stripMargin)
+    }
     /// Drives the appear and disappear animation of the shelf.
     var isPresented = false
     var isPreviewing = false
@@ -131,6 +137,7 @@ final class ShelfModel {
         isPreviewing = false
         isCommandDown = false
         hasChosen = false
+        scrolling = Self.makeScrolling()
         pasteRequest = nil
         if searchText.isEmpty, filter == .all {
             reload(keepingSelection: false)
@@ -193,6 +200,12 @@ final class ShelfModel {
 
     func moveSelection(by offset: Int) {
         guard !items.isEmpty else { return }
+        // After scrolling by hand, the selected clip can be far out of sight. The arrow
+        // keys then start from what is on screen instead of jumping back to it.
+        if scrolling.isHandScrolled, let selection, !visibleIDs.isEmpty, !visibleIDs.contains(selection) {
+            select(offset > 0 ? visibleIDs.first : visibleIDs.last)
+            return
+        }
         let current = selectedIndex ?? (offset > 0 ? -1 : items.count)
         let target = min(max(current + offset, 0), items.count - 1)
         select(items[target].id)
@@ -204,6 +217,7 @@ final class ShelfModel {
     /// Selects the clip the user pointed at, with the keyboard or the mouse.
     func select(_ id: ClipItem.ID?) {
         hasChosen = true
+        scrolling.userChose()
         selection = id
     }
 
