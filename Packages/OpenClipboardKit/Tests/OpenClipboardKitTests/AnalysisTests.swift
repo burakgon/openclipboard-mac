@@ -43,6 +43,19 @@ import Testing
     }
 }
 
+@Suite struct TextOnColorTests {
+    /// The accent colors of macOS and its system colors, light and dark.
+    @Test(arguments: ["#007AFF", "#0A84FF", "#953D96", "#BF5AF2", "#F74F9E", "#FF375F", "#E0383E", "#FF453A", "#8C8C8C"])
+    func whiteTextOnTheDarkerColors(_ hex: String) {
+        #expect(ColorParser.parse(hex)?.needsDarkText == false)
+    }
+
+    @Test(arguments: ["#F7821B", "#FF9500", "#FF9F0A", "#FFC600", "#FFD60A", "#62BA46", "#34C759", "#30D158", "#FF990A"])
+    func darkTextOnTheLightOnes(_ hex: String) {
+        #expect(ColorParser.parse(hex)?.needsDarkText == true)
+    }
+}
+
 @Suite struct PageToneTests {
     private func color(_ hex: String) -> RGBAColor { ColorParser.parse(hex)! }
 

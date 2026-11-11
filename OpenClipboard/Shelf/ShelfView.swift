@@ -60,6 +60,9 @@ private struct ShelfTopBar: View {
             if shelf.settings.isPaused {
                 PausedBadge { shelf.settings.isPaused = false }
             }
+            if let pending = shelf.updater.pending {
+                UpdateButton(pending: pending) { shelf.takeUpUpdate() }
+            }
             if model.hasLoaded, model.totalCount > 0 {
                 Text(countText(model))
                     .font(.system(size: 11.5))
@@ -208,15 +211,22 @@ private struct FilterBar: View {
 
 private struct PausedBadge: View {
     let resume: () -> Void
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         Button(action: resume) {
-            Label("Paused", systemImage: "pause.fill")
-                .font(.system(size: 11.5, weight: .semibold))
-                .foregroundStyle(.orange)
-                .padding(.horizontal, 10)
-                .frame(height: 26)
-                .background(.orange.opacity(0.16), in: .capsule)
+            // The word is in the color of all other text on the shelf, which stays
+            // readable over any wallpaper. Only the symbol is orange.
+            Label {
+                Text("Paused")
+            } icon: {
+                Image(systemName: "pause.fill")
+                    .foregroundStyle(Color.warningFill)
+            }
+            .font(.system(size: 11.5, weight: .semibold))
+            .padding(.horizontal, 10)
+            .frame(height: 26)
+            .background(Color.controlFill(scheme), in: .capsule)
         }
         .buttonStyle(.plain)
         .help("OpenClipboard is not recording what you copy. Click to resume.")
@@ -233,13 +243,49 @@ private struct WarningButton: View {
         Button(action: action) {
             Label(title, systemImage: "exclamationmark.triangle.fill")
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.onWarning)
                 .padding(.horizontal, 11)
                 .frame(height: 26)
-                .background(.orange, in: .capsule)
+                .background(Color.warningFill, in: .capsule)
         }
         .buttonStyle(.plain)
         .help(help)
+    }
+}
+
+/// Says that a new version is waiting. The shelf is the one place every user looks at,
+/// also those who have hidden the menu bar icon.
+private struct UpdateButton: View {
+    let pending: Updater.Pending
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: "arrow.down.circle.fill")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Color.onAccent)
+                .padding(.horizontal, 11)
+                .frame(height: 26)
+                .background(.tint, in: .capsule)
+        }
+        .buttonStyle(.plain)
+        .help(help)
+    }
+
+    private var title: String {
+        switch pending {
+        case .ready: "Restart to Update"
+        case .available: "Update Available"
+        }
+    }
+
+    private var help: String {
+        switch pending {
+        case .ready(let version):
+            "OpenClipboard \(version) has been downloaded. Click to restart into it: it takes a moment, and your history stays as it is."
+        case .available(let version):
+            "OpenClipboard \(version) is available. Click to see what is new and install it."
+        }
     }
 }
 

@@ -20,6 +20,10 @@ import SwiftUI
 ///     --settings history     show a pane of the settings window
 ///     --passive              never take the keyboard focus (for unattended screenshots)
 ///     --trusted              show the shelf as it is with the permission to paste
+///     --untrusted            and as it is without
+///     --paused               show the app as it is while recording is paused
+///     --update ready         show the interface as it is with an update downloaded
+///                            ("available": found, not downloaded)
 ///     --dry-paste FILE       instead of pressing ⌘V, write the name of the app that would
 ///                            have received it to FILE
 enum Demo {

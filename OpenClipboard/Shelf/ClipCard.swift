@@ -140,7 +140,7 @@ private struct QuickPasteBadge: View {
     var body: some View {
         Text("⌘\(number)")
             .font(.system(size: 11.5, weight: .bold, design: .rounded))
-            .foregroundStyle(.white)
+            .foregroundStyle(Color.onAccent)
             .padding(.horizontal, 7)
             .frame(height: 22)
             .background(.tint, in: .rect(cornerRadius: 7))
@@ -415,7 +415,7 @@ private struct FileCardBody: View {
             if isMissing {
                 Text("Moved or deleted")
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Color.warningText)
             }
         }
         .padding(.horizontal, 12)

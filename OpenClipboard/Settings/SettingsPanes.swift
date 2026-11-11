@@ -22,7 +22,7 @@ struct GeneralSettingsPane: View {
                     Text("Works in every app. Press it again, or Esc, to close the history.")
                 } else {
                     Text("macOS did not accept \(settings.hotKey.displayString): another app may be using it. Choose a different shortcut.")
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Color.warningText)
                 }
             }
             // The shortcut is registered a moment after it changes; then look whether it took.
@@ -44,7 +44,7 @@ struct GeneralSettingsPane: View {
             } footer: {
                 if loginItemFailed {
                     Text("macOS did not allow this. Move OpenClipboard to the Applications folder and try again.")
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Color.warningText)
                 } else if !settings.showsMenuBarIcon {
                     Text("To get back to these settings, open OpenClipboard again from Spotlight or the Applications folder.")
                 }
@@ -297,11 +297,35 @@ struct AboutSettingsPane: View {
                 .padding(.vertical, 4)
             }
 
+            if let pending = updater.pending {
+                Section {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.down.circle.fill")
+                            .foregroundStyle(.tint)
+                        VStack(alignment: .leading, spacing: 1) {
+                            switch pending {
+                            case .ready(let version):
+                                Text("OpenClipboard \(version) is ready")
+                                Text("Downloaded. It is installed the next time the app quits.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            case .available(let version):
+                                Text("OpenClipboard \(version) is available")
+                            }
+                        }
+                        Spacer()
+                        Button(pending.isReady ? "Restart Now" : "Install…") {
+                            actions.takeUpUpdate()
+                        }
+                    }
+                }
+            }
+
             if updater.isAvailable {
                 Section("Updates") {
                     Toggle("Check for updates automatically", isOn: $checksAutomatically)
                         .onChange(of: checksAutomatically) { _, value in updater.automaticallyChecksForUpdates = value }
-                    Toggle("Download and install updates automatically", isOn: $downloadsAutomatically)
+                    Toggle("Download and install them automatically", isOn: $downloadsAutomatically)
                         .onChange(of: downloadsAutomatically) { _, value in updater.automaticallyDownloadsUpdates = value }
                         .disabled(!checksAutomatically)
                     HStack {

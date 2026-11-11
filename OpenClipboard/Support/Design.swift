@@ -1,3 +1,4 @@
+import OpenClipboardKit
 import SwiftUI
 
 /// The measurements of the shelf, in one place so the window and its content agree.
@@ -50,4 +51,35 @@ extension Color {
     static func controlFill(_ scheme: ColorScheme) -> Color {
         scheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.06)
     }
+
+    // Words in color have to stay readable. The system's orange and the lighter accent
+    // colors are made for symbols and fills: white text on them, or orange text on a
+    // light background, has a contrast of about 2 to 1.
+
+    /// The fill of a warning. A color of its own instead of the system's orange, which
+    /// on glass is mixed with whatever is behind the shelf: it then ranges from pale
+    /// yellow to brown, and nothing written on it can be relied on to be readable.
+    static let warningFill = Color(.sRGB, red: 1, green: 0.6, blue: 0.04)
+
+    /// For words on `warningFill`: near black, like a warning sign.
+    static let onWarning = Color.black.opacity(0.85)
+
+    /// Orange for words: bright on a dark background, a deeper one on a light.
+    static let warningText = Color(nsColor: NSColor(name: nil) { appearance in
+        appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            ? NSColor(srgbRed: 1, green: 0.62, blue: 0.04, alpha: 1) : NSColor(srgbRed: 0.68, green: 0.30, blue: 0, alpha: 1)
+    })
+
+    /// For words on a fill of the accent color: white, or near black on the accent colors
+    /// that are too light to carry white, which are yellow, orange and green.
+    static let onAccent = Color(nsColor: NSColor(name: nil) { appearance in
+        var needsDarkText = false
+        appearance.performAsCurrentDrawingAppearance {
+            if let accent = NSColor.controlAccentColor.usingColorSpace(.sRGB) {
+                needsDarkText = RGBAColor(red: accent.redComponent, green: accent.greenComponent, blue: accent.blueComponent)
+                    .needsDarkText
+            }
+        }
+        return needsDarkText ? NSColor(white: 0, alpha: 0.85) : .white
+    })
 }

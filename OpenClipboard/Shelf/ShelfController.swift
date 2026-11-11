@@ -10,6 +10,7 @@ import UniformTypeIdentifiers
 final class ShelfController: NSObject, NSWindowDelegate {
     @ObservationIgnored let model: ShelfModel
     @ObservationIgnored let settings: AppSettings
+    @ObservationIgnored let updater: Updater
     @ObservationIgnored let appIcons = AppIcons()
     @ObservationIgnored let thumbnails: Thumbnails
     @ObservationIgnored let fileThumbnails: FileThumbnails
@@ -44,9 +45,9 @@ final class ShelfController: NSObject, NSWindowDelegate {
     /// keyboard from whoever is at the Mac.
     @ObservationIgnored var takesFocus = true
 
-    /// True only while screenshots are staged, to show the shelf the way it looks once the
-    /// permission to paste has been given.
-    @ObservationIgnored var assumesPastePermission = false
+    /// Set only while screenshots are staged, to show the shelf the way it looks with
+    /// the permission to paste, or without it. Otherwise macOS is asked.
+    @ObservationIgnored var stagedPastePermission: Bool?
 
     /// Presses ⌘V in the app in front. Staged tests replace it, to find out where a paste
     /// would land without pasting anything anywhere.
@@ -58,10 +59,14 @@ final class ShelfController: NSObject, NSWindowDelegate {
     /// Opens the settings window. Set by the app delegate.
     @ObservationIgnored var onOpenSettings: (() -> Void)?
 
-    init(store: HistoryStore, clipboard: SystemClipboard, settings: AppSettings, pasteboard: NSPasteboard = .general) {
+    init(
+        store: HistoryStore, clipboard: SystemClipboard, settings: AppSettings, updater: Updater,
+        pasteboard: NSPasteboard = .general
+    ) {
         self.store = store
         self.clipboard = clipboard
         self.settings = settings
+        self.updater = updater
         self.pasteboard = pasteboard
         model = ShelfModel(store: store)
         thumbnails = Thumbnails(store: store)
@@ -347,7 +352,7 @@ final class ShelfController: NSObject, NSWindowDelegate {
     }
 
     /// Whether macOS lets OpenClipboard press ⌘V in other apps.
-    private var isTrusted: Bool { PasteService.isTrusted || assumesPastePermission }
+    private var isTrusted: Bool { stagedPastePermission ?? PasteService.isTrusted }
 
     /// Puts the clip on the pasteboard and pastes it into the app the user came from.
     func paste(_ item: ClipItem, asPlainText: Bool = false) {
@@ -489,6 +494,12 @@ final class ShelfController: NSObject, NSWindowDelegate {
     func openSettings() {
         hide()
         onOpenSettings?()
+    }
+
+    /// Restarts into a downloaded update, or shows the one that was found.
+    func takeUpUpdate() {
+        hide()
+        updater.takeUpPendingUpdate()
     }
 
     /// Leads to the setting that lets OpenClipboard read what other apps copy.

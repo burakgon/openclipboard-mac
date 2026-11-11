@@ -28,6 +28,13 @@ public struct RGBAColor: Sendable, Hashable {
         return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue)
     }
 
+    /// Whether words on a fill of this color have to be dark to be readable.
+    ///
+    /// White is what people expect on a colored button, and it reads well on blue, purple,
+    /// red, pink and gray. On the light colors, which are yellow, orange and green, it has
+    /// a contrast of about 2 to 1 and dark text one of 8 to 1 or more.
+    public var needsDarkText: Bool { luminance > 0.32 }
+
     public var rgbDescription: String {
         let channel: (Double) -> Int = { Int(($0 * 255).rounded()) }
         if alpha >= 0.999 {

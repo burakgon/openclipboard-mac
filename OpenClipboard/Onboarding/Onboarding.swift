@@ -254,7 +254,7 @@ private struct Step: View {
         HStack(spacing: 10) {
             Text("\(number)")
                 .font(.system(size: 12, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.onAccent)
                 .frame(width: 22, height: 22)
                 .background(.tint, in: .circle)
             Text(text)

@@ -15,9 +15,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var observers: [Task<Void, Never>] = []
     private var demoDirector: DemoDirector?
 
-    /// Where the history is kept: ~/Library/Application Support/OpenClipboard/History.sqlite
+    /// Where the history is kept: ~/Library/Application Support/OpenClipboard/History.sqlite.
+    ///
+    /// A copy of the app with a bundle identifier of its own, such as a build someone
+    /// signed for themselves or one made for a test, keeps its history in a folder named
+    /// after that identifier. It has settings of its own too, and two apps with different
+    /// settings on one history would delete each other's clips.
     static var historyURL: URL {
-        URL.applicationSupportDirectory.appending(path: "OpenClipboard/History.sqlite")
+        let official = "com.burakgon.OpenClipboard"
+        let identifier = Bundle.main.bundleIdentifier ?? official
+        let folder = identifier == official ? "OpenClipboard" : identifier
+        return URL.applicationSupportDirectory.appending(path: "\(folder)/History.sqlite")
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -42,10 +50,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let name = Demo.pasteboardName
             clipboard = SystemClipboard(store: store, pasteboard: { NSPasteboard(name: NSPasteboard.Name(name)) })
             shelf = ShelfController(
-                store: store, clipboard: clipboard, settings: settings, pasteboard: NSPasteboard(name: NSPasteboard.Name(name)))
+                store: store, clipboard: clipboard, settings: settings, updater: updater,
+                pasteboard: NSPasteboard(name: NSPasteboard.Name(name)))
         } else {
             clipboard = SystemClipboard(store: store)
-            shelf = ShelfController(store: store, clipboard: clipboard, settings: settings)
+            shelf = ShelfController(store: store, clipboard: clipboard, settings: settings, updater: updater)
         }
         shelf.onOpenSettings = { [weak self] in self?.showSettings() }
         self.store = store
@@ -63,8 +72,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let director = DemoDirector(shelf: shelf)
             demoDirector = director
             shelf.takesFocus = !Demo.has("--passive")
-            shelf.assumesPastePermission = Demo.has("--trusted")
+            shelf.stagedPastePermission = Demo.has("--trusted") ? true : Demo.has("--untrusted") ? false : nil
+            if Demo.has("--paused") { settings.isPaused = true }
             AppWindows.isPassive = Demo.has("--passive")
+            if let state = Demo.value(of: "--update") {
+                updater.stage(state == "ready" ? .ready(version: "1.1") : .available(version: "1.1"))
+            }
             Task {
                 await Demo.populate(store)
                 director.run()
@@ -204,6 +217,10 @@ extension AppDelegate: AppActions {
         updater.checkForUpdates()
     }
 
+    @objc func takeUpUpdate() {
+        updater.takeUpPendingUpdate()
+    }
+
     @objc func showAbout() {
         NSApp.activate()
         NSApp.orderFrontStandardAboutPanel(options: [
@@ -245,6 +262,7 @@ extension AppDelegate: AppActions {
     func showShelf()
     func showSettings()
     func checkForUpdates()
+    func takeUpUpdate()
     func showAbout()
     func togglePause()
     func showWelcome()

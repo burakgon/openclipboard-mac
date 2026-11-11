@@ -2,6 +2,13 @@
 
 Notable changes to OpenClipboard, newest first. Versions follow [semantic versioning](https://semver.org).
 
+## 1.0.5
+
+- **Updates install themselves.** A new version is now downloaded in the background and installed the next time OpenClipboard quits. Until then the shelf shows a "Restart to Update" button, the menu bar icon carries a dot and the settings say that an update is ready: one click restarts the app into the new version, in about a second, with your history as it was. To be asked first, as before, turn off "Download and install them automatically" in Settings → About; the shelf then shows "Update Available" when there is one.
+- **The "Allow Pasting…" button is readable.** Its white text on orange was hard to make out, and on the glass of the shelf the orange took on the colors behind it. Warnings now have dark text on a color of their own, and "Paused" is written in the color of the shelf's other text.
+- Text on the accent color, such as the quick paste numbers, turns dark when the accent color chosen in System Settings is a light one: yellow, orange or green.
+- A copy of the app built with a bundle identifier of its own keeps its history in a folder of its own, apart from the one of the released app.
+
 ## 1.0.4
 
 - **The shelf stays where you scroll it.** After scrolling with the trackpad or the mouse wheel, the row slid back to the selected clip as soon as it came to rest. Now nothing moves it until you choose a clip.

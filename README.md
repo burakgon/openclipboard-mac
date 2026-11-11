@@ -121,8 +121,10 @@ front.
 - Opens on the display you are working on, on every Space, and over apps in full screen.
 - A mouse wheel scrolls the shelf sideways. Double-click pastes, right-click has every action.
 - Light and dark mode, your accent color, Reduce Transparency and VoiceOver labels.
-- Opens at login if you want, and updates itself with [Sparkle](https://sparkle-project.org).
-  Every update is signed twice: by Apple's notary service and with the project's own key.
+- Opens at login if you want, and keeps itself up to date with
+  [Sparkle](https://sparkle-project.org): a new version is downloaded in the background and
+  installed the next time the app quits, or at once when you click *Restart to Update* in the
+  shelf. Every update is signed twice: by Apple's notary service and with the project's own key.
 
 ## Install
 
@@ -170,7 +172,8 @@ it more than you can check.
 - **Your history stays on your Mac.** It is one SQLite file in
   `~/Library/Application Support/OpenClipboard`, readable only by your user account. There is no
   account, no sync, no analytics and no crash reporting.
-- **The only network request** is the check for updates, to GitHub. You can turn it off.
+- **The only network requests** are the daily check for updates and the download of one, both
+  from GitHub. You can turn them off.
 - **Passwords are skipped.** Password managers mark what they copy as secret
   ([nspasteboard.org](http://nspasteboard.org)); OpenClipboard does not record those clips, nor the
   ones apps mark as transient.
@@ -205,6 +208,13 @@ is recorded like any other copy.
 **Why macOS 26 or later?**<br>
 The shelf is built on Liquid Glass, which arrived with macOS 26. Supporting older systems would
 mean a second interface.
+
+**How do updates work?**<br>
+By themselves. Once a day OpenClipboard looks for a new version, downloads it in the background
+and installs it the next time it quits, for example when you restart your Mac. Until then the
+shelf shows a *Restart to Update* button and the menu bar icon carries a dot: one click and the
+app is back in about a second, in the new version, with your history as it was. If you would
+rather be asked first, turn off *Download and install them automatically* in Settings → About.
 
 **How do I uninstall it?**<br>
 Quit it from the menu bar, move it to the Trash, and delete

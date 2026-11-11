@@ -68,7 +68,7 @@ struct ShortcutRecorder: View {
             if let problem {
                 Text(problem)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Color.warningText)
             }
         }
         .animation(.snappy(duration: 0.15), value: isRecording)
