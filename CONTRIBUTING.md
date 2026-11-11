@@ -57,7 +57,9 @@ Logic that can be tested belongs in the kit, with a test.
 ## Releasing
 
 For maintainers: set the version in `Config/Version.xcconfig`, add a section for it to
-`CHANGELOG.md`, commit, push, and run `scripts/release.sh --publish`. If the change touches
-updating, run `scripts/test-update.sh` first, with and without `--ask`. The script's header
+`CHANGELOG.md`, commit, push, and run `scripts/release.sh --publish`. The header of that script
 describes the credentials it uses. Pushing a `v1.2.3` tag instead lets the Release workflow do the
 same on GitHub, once `scripts/add-release-secrets.sh` has stored its secrets.
+
+If a change touches updating, run `scripts/test-update.sh` before releasing it, with and without
+`--ask`.
